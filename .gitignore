@@ -1,0 +1,47 @@
+# Базы данных
+db/
+*.sqlite
+*.db
+users.db
+# Секреты
+*.pem
+*.key
+.env
+config/*.secret.php
+
+# Логи
+*.log
+error_log
+
+# Кэш и временные файлы
+*.swp
+*.tmp
+*.sess
+cache/
+tmp/
+
+# IDE и OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Загрузки и резервные копии
+uploads/
+backup/
+*.bak
+*.old
+
+# Зависимости
+vendor/
+node_modules/
+dist/
+build/
+src/
+db/
+inc/
+        composer.json
+        composer.lock
+        logs/
+        register.php.save
+        test_send.php

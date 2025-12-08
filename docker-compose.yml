@@ -1,0 +1,20 @@
+﻿version: '3.8'
+
+services:
+  php:
+    build: .
+    container_name: mysite_php
+    volumes:
+      - .:/var/www/mysite
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: mysite_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/mysite
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - php

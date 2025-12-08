@@ -1,0 +1,253 @@
+/* style_new.css */
+
+/* --- 1. Основные настройки --- */
+:root {
+  --primary-color: #007BFF;       /* Основной синий */
+  --primary-hover: #0056b3;
+  --bg-color: #f4f6f9;            /* Светло-серый фон страницы */
+  --text-color: #333;
+  --border-color: #ddd;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --gray-color: #6c757d;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+/* --- 2. Контейнер --- */
+/* Делаем его широким для таблицы, но с ограничением */
+.container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  width: 90%;
+  max-width: 1000px; /* Шире, чем раньше, чтобы влезла таблица */
+  margin: 2rem auto;
+}
+
+/* Заголовки */
+h1, h2, h3 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+/* Ссылка "Назад" или в шапке */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* --- 3. Навигация и Шапка --- */
+.header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.header-info a {
+  background: #f8f9fa;
+  padding: 8px 15px;
+  border-radius: 4px;
+  color: var(--danger-color);
+  font-weight: bold;
+  border: 1px solid #ddd;
+}
+.header-info a:hover {
+  background: #e2e6ea;
+  text-decoration: none;
+}
+
+/* --- 4. Формы (Вход, Регистрация, Подача заявки) --- */
+/* Ограничиваем ширину форм, чтобы они не растягивались на весь широкий контейнер */
+form {
+  max-width: 500px;
+  margin: 0 auto; /* Центрируем форму */
+  text-align: left;
+}
+
+/* Если форма внутри админки для ответа - можно пошире */
+.edit-box form {
+  max-width: 1000px; 
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #555;
+  margin-top: 15px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box; /* Чтобы padding не ломал ширину */
+  font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 5px rgba(0,123,255,0.2);
+}
+
+button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  width: 100%;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Блок подачи заявки (серый фон) */
+.form-box {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+.form-box h3 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* --- 5. Таблицы (Заявки) --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.95rem;
+}
+
+thead tr {
+  background-color: #007BFF;
+  color: #ffffff;
+  text-align: left;
+}
+
+th, td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Если текста много, чтобы он не слипался */
+td small {
+  display: block;
+  margin-top: 4px;
+  color: #666;
+}
+
+/* --- 6. Статусы и Бейджи --- */
+/* Общие стили для ячейки статуса */
+td[class^="status-"] {
+  font-weight: bold;
+  text-transform: capitalize; 
+}
+
+/* Цвета статусов */
+.status-new {
+  color: var(--success-color); /* Зеленый */
+}
+.status-in_progress {
+  color: var(--warning-color); /* Желтый/Оранжевый */
+}
+.status-rejected {
+  color: var(--danger-color); /* Красный */
+}
+.status-done {
+  color: var(--gray-color); /* Серый */
+  text-decoration: line-through;
+}
+
+/* Кнопка "Ответить" для админа */
+.btn-small {
+    display: inline-block;
+    padding: 5px 10px;
+    background: var(--primary-color);
+    color: white !important; /* перебиваем цвет ссылки */
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 5px;
+}
+.btn-small:hover {
+    background: var(--primary-hover);
+    text-decoration: none;
+}
+
+/* --- 7. Сообщения об ошибках и успехе --- */
+.msg, .alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #c3e6cb;
+}
+
+.error, .alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #f5c6cb;
+}
+
+/* --- 8. Адаптивность (Мобильные) --- */
+@media (max-width: 768px) {
+  .container {
+    width: 95%;
+    padding: 1rem;
+  }
+  
+  /* Делаем таблицу прокручиваемой по горизонтали на телефоне */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .header-info {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}
