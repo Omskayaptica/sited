@@ -24,6 +24,30 @@ require_once '/var/www/mysite/src/mail.php'; // Функция sendVerificationC
 
 $error = '';
 
+// Функция проверки Turnstile
+function verifyTurnstile($secretKey, $responseToken) {
+    $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    
+    $data = [
+        'secret' => $secretKey,
+        'response' => $responseToken,
+        'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+    
+    $options = [
+        'http' => [
+            'method' => 'POST',
+            'header' => 'Content-Type: application/x-www-form-urlencoded',
+            'content' => http_build_query($data)
+        ]
+    ];
+    
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    
+    return json_decode($result, true);
+}
+
 // Обработка отправки формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
@@ -31,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_post = $_POST['csrf'] ?? '';
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
+    $cf_turnstile_response = $_POST['cf-turnstile-response'] ?? '';
     
     // Новые поля для ТСЖ
     $fullName = trim($_POST['full_name'] ?? '');
@@ -42,6 +67,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Ошибка безопасности (CSRF). Обновите страницу.");
     }
 
+    // 3. Валидация Turnstile 
+    if (empty($cf_turnstile_response)) {
+        $error = "Пожалуйста, пройдите проверку безопасности.";
+    } else {
+        $turnstileResult = verifyTurnstile(TURNSTILE_SECRET_KEY, $cf_turnstile_response);
+        
+        if (!$turnstileResult['success']) {
+            $error = "Проверка безопасности не пройдена. Пожалуйста, попробуйте снова.";
+            // Для отладки можно добавить:
+            // error_log("Turnstile error: " . print_r($turnstileResult, true));
+        }
+    }
+   if (!$error) {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Некорректный email.";
     } elseif (strlen($password) < 8) {
@@ -49,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($fullName) || empty($apartment)) {
         $error = "Пожалуйста, заполните ФИО и номер квартиры.";
     }
-
+}
     // Если ошибок нет — пробуем регистрировать
     if (!$error) {
         try {
@@ -133,13 +171,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <title>Регистрация в ТСЖ</title>
-<link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
+  <!-- Подключение Turnstile - УБЕРИТЕ async defer для контроля загрузки -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
   <style>
-      /* Небольшие стили для формы, если style_new.css не подхватит */
       .form-group { margin-bottom: 15px; }
       .form-group span { display: block; margin-bottom: 5px; font-weight: bold; }
       .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
       .error-msg { color: red; margin-bottom: 15px; }
+      .cf-turnstile-container { 
+          margin: 20px 0; 
+          padding: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: #f9f9f9;
+          min-height: 65px; /* Минимальная высота для виджета */
+      }
+      #turnstile-widget {
+          width: 100%;
+      }
   </style>
 </head>
 <body>
@@ -151,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="error-msg"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="POST" autocomplete="off" class="form">
+    <form method="POST" autocomplete="off" class="form" id="registration-form">
       <input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['csrf'] ?? '')?>">
 
       <!-- Основные данные -->
@@ -191,12 +241,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </label>
       </div>
 
-      <button type="submit">Зарегистрироваться</button>
+      <!-- Cloudflare Turnstile Widget -->
+      <div class="cf-turnstile-container">
+          <div id="turnstile-widget"></div>
+      </div>
+
+      <button type="submit" id="submit-btn">Зарегистрироваться</button>
 
       <p style="margin-top: 15px;">
           Уже есть аккаунт? <a href="login.php">Войти</a>
       </p>
     </form>
   </div>
+
+  <script>
+  // Инициализация Turnstile с задержкой
+  document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('registration-form');
+      const submitBtn = document.getElementById('submit-btn');
+      let turnstileWidget = null;
+      let turnstileToken = '';
+      
+      // Функция инициализации Turnstile
+      function initTurnstile() {
+          // Проверяем, не был ли уже инициализирован виджет
+          if (document.querySelector('.cf-turnstile iframe')) {
+              console.log('Turnstile уже инициализирован');
+              return;
+          }
+          
+          // Очищаем контейнер
+          const container = document.getElementById('turnstile-widget');
+          if (container) {
+              container.innerHTML = '';
+              
+              // Инициализируем Turnstile
+              if (typeof turnstile !== 'undefined') {
+                  turnstileWidget = turnstile.render('#turnstile-widget', {
+                      sitekey: '<?= htmlspecialchars(TURNSTILE_SITE_KEY) ?>',
+                      callback: function(token) {
+                          turnstileToken = token;
+                          console.log('Turnstile пройден, токен получен');
+                          // Создаем скрытое поле для токена
+                          let hiddenInput = document.querySelector('input[name="cf-turnstile-response"]');
+                          if (!hiddenInput) {
+                              hiddenInput = document.createElement('input');
+                              hiddenInput.type = 'hidden';
+                              hiddenInput.name = 'cf-turnstile-response';
+                              form.appendChild(hiddenInput);
+                          }
+                          hiddenInput.value = token;
+                      },
+                      'error-callback': function() {
+                          console.log('Ошибка Turnstile');
+                          turnstileToken = '';
+                      },
+                      'expired-callback': function() {
+                          console.log('Turnstile токен истек');
+                          turnstileToken = '';
+                      },
+                      theme: 'light',
+                      size: 'normal'
+                  });
+                  
+                  console.log('Turnstile инициализирован');
+              } else {
+                  console.error('Turnstile API не загружен');
+                  // Если Turnstile не загрузился, показываем сообщение
+                  container.innerHTML = '<div style="color: red;">Ошибка загрузки проверки безопасности. Пожалуйста, обновите страницу.</div>';
+              }
+          }
+      }
+      
+      // Ждем загрузки Turnstile API
+      if (typeof turnstile !== 'undefined') {
+          // Если API уже загружено
+          setTimeout(initTurnstile, 100);
+      } else {
+          // Если API еще не загружено, ждем
+          let attempts = 0;
+          const waitForTurnstile = setInterval(function() {
+              attempts++;
+              if (typeof turnstile !== 'undefined') {
+                  clearInterval(waitForTurnstile);
+                  initTurnstile();
+              } else if (attempts > 50) { // Ждем максимум 5 секунд (50 * 100ms)
+                  clearInterval(waitForTurnstile);
+                  console.error('Turnstile API не загрузилось за 5 секунд');
+                  document.getElementById('turnstile-widget').innerHTML = 
+                      '<div style="color: orange;">Проверка безопасности временно недоступна. Пожалуйста, попробуйте позже.</div>';
+              }
+          }, 100);
+      }
+      
+      // Проверка при отправке формы
+      form.addEventListener('submit', function(e) {
+          if (!turnstileToken) {
+              e.preventDefault();
+              alert('Пожалуйста, пройдите проверку безопасности (нажмите на квадратик).');
+              return false;
+          }
+          
+          // Дополнительная проверка скрытого поля
+          const hiddenInput = document.querySelector('input[name="cf-turnstile-response"]');
+          if (!hiddenInput || !hiddenInput.value) {
+              e.preventDefault();
+              alert('Ошибка проверки безопасности. Обновите страницу и попробуйте снова.');
+              return false;
+          }
+          
+          return true;
+      });
+  });
+  </script>
 </body>
 </html>

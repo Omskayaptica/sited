@@ -43,3 +43,5 @@ try {
     http_response_code(500);
     exit('Internal Server Error (DB)');
 }
+define('TURNSTILE_SITE_KEY', '0x4AAAAAACMZhdn2u8EuLAN7');
+define('TURNSTILE_SECRET_KEY', '0x4AAAAAACMZhVjcWfEK9ine2MpjeNh2ebs');
