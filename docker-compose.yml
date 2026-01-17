@@ -18,3 +18,4 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
     depends_on:
       - php
+    docker image prune -f
