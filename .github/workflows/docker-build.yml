@@ -96,5 +96,5 @@ deploy:
           exit 1
         fi
       fi
-
+      /usr/bin/docker image prune -f
       echo "Deploy finished successfully."
