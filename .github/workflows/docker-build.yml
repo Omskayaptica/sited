@@ -18,21 +18,72 @@ deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Executing remote ssh commands
+      - name: Executing remote ssh commands using ssh-key
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # 1. Переходим в папку, используя переменную пользователя
-            # Это сработает, если папка server-setup лежит в корне вашего пользователя
-            cd /home/${{ secrets.SSH_USER }}/server-setup/website
+            # --- НАЧАЛО СКРИПТА ДИАГНОСТИКИ ---
+            TARGET_DIR="/home/${{ secrets.SSH_USER }}/server-setup/website"
+            echo "Target Directory: $TARGET_DIR"
+
+            if [ -d "$TARGET_DIR" ]; then
+              cd "$TARGET_DIR"
+              echo "Successfully moved to $TARGET_DIR"
+            else
+              echo "ERROR: target directory does not exist: $TARGET_DIR"
+              ls -la /home/${{ secrets.SSH_USER }}/ || true
+              exit 1
+            fi
+
+            echo "--- Git Diagnostics ---"
+            git remote -v || true
             
-            # 2. Обновляем код из репозитория
-            git pull origin main
-            
-            # 3. Запускаем Docker. 
-            # Мы НЕ используем docker-compose. Мы используем только новый стандарт.
-            # Команда 'which docker' на 99% серверов - это /usr/bin/docker
-            /usr/bin/docker compose up -d --build
+            echo "Pulling latest from origin main..."
+            git pull origin main || { echo "git pull failed"; exit 1; }
+
+            echo "--- Docker Diagnostics ---"
+            if command -v docker >/dev/null 2>&1; then
+              DOCKER_BIN="$(command -v docker)"
+              echo "Docker binary found at: $DOCKER_BIN"
+              $DOCKER_BIN --version || true
+            else
+              echo "docker NOT found in PATH"
+            fi
+
+            if command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_BIN="$(command -v docker-compose)"
+              echo "docker-compose binary found at: $COMPOSE_BIN"
+              $COMPOSE_BIN --version || true
+            else
+              echo "docker-compose NOT found in PATH"
+            fi
+
+            echo "Checking docker permissions..."
+            if docker ps >/dev/null 2>&1; then
+              DOCKER_OK=true
+              echo "Docker is usable by current user"
+            else
+              DOCKER_OK=false
+              echo "Docker NOT usable (permission denied). Will try sudo."
+            fi
+
+            # --- ЗАПУСК ---
+            if [ "$DOCKER_OK" = true ] ; then
+              echo "Running: docker compose up -d --build"
+              docker compose up -d --build || { echo "docker compose failed"; exit 1; }
+            else
+              if sudo -n true 2>/dev/null; then
+                echo "Running with sudo: docker compose up -d --build"
+                sudo docker compose up -d --build || { echo "sudo docker compose failed"; exit 1; }
+              elif command -v docker-compose >/dev/null 2>&1; then
+                echo "Trying legacy docker-compose..."
+                docker-compose up -d --build || { echo "docker-compose failed"; exit 1; }
+              else
+                echo "ERROR: Cannot run docker at all."
+                exit 1
+              fi
+            fi
+            echo "Deploy step finished successfully."
