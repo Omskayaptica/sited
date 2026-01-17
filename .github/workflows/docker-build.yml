@@ -14,24 +14,25 @@ jobs:
       - name: Build Test
         run: docker build . --file Dockerfile 
 
-  deploy:
+deploy:
     runs-on: ubuntu-latest
-    needs: build # Деплой начнется только если тест сборки (build) прошел успешно
+    needs: build
     steps:
-      - name: Executing remote ssh commands using ssh-key
+      - name: Executing remote ssh commands
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # 1. Переходим в папку (используйте полный путь от корня!)
-            cd /home/${{ secrets.SSH_USER }}/server-setup/website 
+            # 1. Переходим в папку, используя переменную пользователя
+            # Это сработает, если папка server-setup лежит в корне вашего пользователя
+            cd /home/${{ secrets.SSH_USER }}/server-setup/website
             
-            # 2. Обновляем код
+            # 2. Обновляем код из репозитория
             git pull origin main
             
-            # 3. Запускаем Docker по полному пути
-            # Команда 'which docker' на 99% серверов выдает /usr/bin/docker
-            # Мы используем полный путь, чтобы bash не смог сказать "я не нашел команду"
+            # 3. Запускаем Docker. 
+            # Мы НЕ используем docker-compose. Мы используем только новый стандарт.
+            # Команда 'which docker' на 99% серверов - это /usr/bin/docker
             /usr/bin/docker compose up -d --build
