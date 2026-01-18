@@ -22,79 +22,9 @@ deploy:
     username: ${{ secrets.SSH_USER }}
     key: ${{ secrets.SSH_KEY }}
     script: |
-      set -euo pipefail
-      echo "== SSH connection established =="
-      echo "User info:"
-      whoami
-      id
-      hostname
-      echo "Home listing:"
-      ls -la /home/${{ secrets.SSH_USER }} || true
-
       TARGET_DIR="/home/${{ secrets.SSH_USER }}/server-setup/website"
-      echo "Target: $TARGET_DIR"
-      if [ ! -d "$TARGET_DIR" ]; then
-        echo "ERROR: target directory does not exist: $TARGET_DIR"
-        ls -la /home/${{ secrets.SSH_USER }}/server-setup || true
-        exit 1
-      fi
       cd "$TARGET_DIR"
-
-      echo "Git branch and status:"
-      git rev-parse --abbrev-ref HEAD || true
-      git status --porcelain || true
-      git remote -v || true
-
-      echo "Pulling latest from origin/main"
-      if ! git pull origin main; then
-        echo "ERROR: git pull failed"
-        exit 1
-      fi
-
-      echo "Docker binary detection:"
-      if command -v docker >/dev/null 2>&1; then
-        DOCKER_BIN="$(command -v docker)"
-        echo "Docker: $DOCKER_BIN"
-        $DOCKER_BIN --version || true
-      else
-        echo "docker not found in PATH"
-      fi
-
-      echo "docker-compose detection:"
-      if command -v docker-compose >/dev/null 2>&1; then
-        COMPOSE_BIN="$(command -v docker-compose)"
-        echo "docker-compose: $COMPOSE_BIN"
-        $COMPOSE_BIN --version || true
-      else
-        echo "docker-compose not found in PATH"
-      fi
-
-      echo "Checking docker permissions with 'docker ps'..."
-      DOCKER_OK=false
-      if command -v docker >/dev/null 2>&1; then
-        if docker ps >/dev/null 2>&1; then
-          DOCKER_OK=true
-          echo "Docker usable by current user"
-        else
-          echo "Docker present but not usable by current user"
-        fi
-      fi
-
-      if [ "$DOCKER_OK" = true ]; then
-        echo "Running: $DOCKER_BIN compose up -d --build"
-        $DOCKER_BIN compose up -d --build || { echo "ERROR: docker compose failed"; exit 1; }
-      else
-        echo "Trying sudo docker or docker-compose fallbacks..."
-        if sudo -n true 2>/dev/null; then
-          echo "Using sudo docker compose up -d --build"
-          sudo $(command -v docker || echo /usr/bin/docker) compose up -d --build || { echo "ERROR: sudo docker compose failed"; exit 1; }
-        elif command -v docker-compose >/dev/null 2>&1; then
-          echo "Using docker-compose up -d --build"
-          docker-compose up -d --build || { echo "ERROR: docker-compose failed"; exit 1; }
-        else
-          echo "ERROR: Cannot execute docker. Ensure docker is installed, daemon is running, and user has permissions (docker group or passwordless sudo)."
-          exit 1
-        fi
-      fi
+      git pull origin main
+      /usr/bin/docker compose up -d --build
       /usr/bin/docker image prune -f
       echo "Deploy finished successfully."
