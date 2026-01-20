@@ -143,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" id="submit-btn">Войти</button>
     </form>
     <p>Нет аккаунта? <a href="register.php">Регистрация</a></p>
+<p>Забыли пароль? <a href="forgot-password.php">Восстановить</a></p>
 </div>
 
 <script>

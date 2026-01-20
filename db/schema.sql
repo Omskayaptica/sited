@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS requests;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS password_resets;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,5 +31,22 @@ CREATE TABLE requests (
 
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used INTEGER DEFAULT 0,
+    ip_address TEXT,
+    user_agent TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_password_resets_token ON password_resets(token_hash);
+CREATE INDEX idx_password_resets_expires ON password_resets(expires_at);
+CREATE INDEX idx_password_resets_user ON password_resets(user_id);
+
 
 INSERT INTO users (email, password, full_name, apartment, role, is_verified) VALUES ('admin@yandex.ru', '$2y$10$lwaDmNh0AG3gy/m95vF/0OWeVkNr/kviOcBeXXYOQBV/KyxCZkEf6', 'Председатель ТСЖ', 'Офис', 'admin', 1);
