@@ -45,3 +45,5 @@ inc/
         logs/
         register.php.save
         test_send.php
+inc/config.local.php
+config.local.php
