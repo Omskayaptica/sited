@@ -7,6 +7,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (file_exists('/var/www/mysite/inc/config.local.php')) {
+    include '/var/www/mysite/inc/config.local.php';
+}
+
 // CSRF token
 if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -42,7 +46,4 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     exit('Internal Server Error (DB)');
-}
-if (file_exists('/var/www/mysite/inc/config.local.php')) {
-    include '/var/www/mysite/inc/config.local.php';
 }
