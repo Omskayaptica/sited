@@ -144,80 +144,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Восстановление пароля</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input[type="email"] {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        .error {
-            color: #dc3545;
-            background: #f8d7da;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .success {
-            color: #155724;
-            background: #d4edda;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Восстановление пароля</h1>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
+    <div class="w-11/12 max-w-xl mx-auto my-10 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Восстановление пароля</h1>
     
     <?php if ($error): ?>
-        <div class="error"><?php echo htmlspecialchars($error); ?></div>
+        <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
     
     <?php if ($success): ?>
-        <div class="success"><?php echo $success; ?></div>
+        <div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?php echo $success; ?></div>
     <?php endif; ?>
     
     <?php if (!$success): ?>
     <form method="POST" action="">
-        <div class="form-group">
-            <label for="email">Email адрес:</label>
+        <div class="mt-4">
+            <label for="email" class="block text-sm font-semibold text-slate-700">Email адрес:</label>
             <input type="email" id="email" name="email" required 
-                   placeholder="Ваш email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                   placeholder="Ваш email" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                   class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </div>
         
         <!-- Cloudflare Turnstile (если используется) -->
         <?php if (defined('TURNSTILE_SITE_KEY')): ?>
-        <div class="cf-turnstile" data-sitekey="<?php echo TURNSTILE_SITE_KEY; ?>"></div>
+        <div class="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4">
+            <div class="cf-turnstile" data-sitekey="<?php echo TURNSTILE_SITE_KEY; ?>"></div>
+        </div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <?php endif; ?>
         
-        <button type="submit">Отправить ссылку для сброса</button>
+        <button type="submit" class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Отправить ссылку для сброса</button>
     </form>
     <?php endif; ?>
     
-    <p style="margin-top: 20px;">
-        <a href="login.php">Вернуться к входу</a> | 
-        <a href="register.php">Регистрация</a>
+    <p class="mt-6 text-sm text-slate-700">
+        <a class="text-blue-600 hover:underline" href="login.php">Вернуться к входу</a> | 
+        <a class="text-blue-600 hover:underline" href="register.php">Регистрация</a>
     </p>
+    </div>
 </body>
 </html>

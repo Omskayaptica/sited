@@ -68,38 +68,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <title>Подтверждение почты</title>
-<link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
-  <style>
-      .alert-error { color: red; margin-bottom: 15px; }
-      .alert-success { color: green; margin-bottom: 15px; }
-      .form-group { margin-bottom: 15px; }
-      .form-group input { width: 100%; padding: 8px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
   <?php render_header(); ?>
-  <div class="container">
-    <h1>Подтверждение регистрации</h1>
+  <div class="w-11/12 max-w-xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Подтверждение регистрации</h1>
     
-    <p>На почту <b><?= htmlspecialchars($email) ?></b> был отправлен код.</p>
+    <p class="mt-2 text-slate-700">На почту <b><?= htmlspecialchars($email) ?></b> был отправлен код.</p>
 
     <?php if ($error): ?>
-        <div class="alert-error"><?= htmlspecialchars($error) ?></div>
+        <div class="mt-4 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
     <?php if ($success): ?>
-        <div class="alert-success"><?= $success ?></div>
+        <div class="mt-4 mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?= $success ?></div>
     <?php else: ?>
 
     <form method="POST" action="verify.php">
       <input type="hidden" name="email" value="<?= htmlspecialchars($email) ?>">
       
-      <div class="form-group">
-        <label>Введите код из письма:</label>
-        <input type="text" name="code" required placeholder="123456" autocomplete="off">
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">Введите код из письма:</label>
+        <input type="text" name="code" required placeholder="123456" autocomplete="off" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
       </div>
 
-      <button type="submit">Подтвердить</button>
+      <button type="submit" class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Подтвердить</button>
     </form>
     <?php endif; ?>
   </div>

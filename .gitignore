@@ -39,7 +39,7 @@ dist/
 build/
 src/
 db/
-inc/
+inc/init.php
         composer.json
         composer.lock
         logs/

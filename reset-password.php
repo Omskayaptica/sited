@@ -159,51 +159,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Сброс пароля - ТСЖ Омская причал</title>
-    <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
-    <style>
-        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 4px; margin: 15px 0; }
-        .success { color: green; background: #e6ffe6; padding: 10px; border-radius: 4px; margin: 15px 0; }
-        form label { display: block; margin-bottom: 15px; }
-        form label input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
-        button[type="submit"] { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button[type="submit"]:hover { background: #218838; }
-        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
     <?php render_header(); ?>
-    <div class="container">
-        <h1>Сброс пароля</h1>
+    <div class="w-11/12 max-w-xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+        <h1 class="text-2xl font-bold text-slate-900">Сброс пароля</h1>
         
         <?php if ($error): ?>
-            <div class="error"><?= htmlspecialchars($error) ?></div>
+            <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         
         <?php if ($success): ?>
-            <div class="success"><?= htmlspecialchars($success) ?></div>
-            <p><a href="login.php" style="display: inline-block; margin-top: 15px;">Перейти к входу</a></p>
+            <div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?= htmlspecialchars($success) ?></div>
+            <p><a class="inline-block mt-4 text-blue-600 hover:underline" href="login.php">Перейти к входу</a></p>
         <?php endif; ?>
         
         <?php if ($show_form): ?>
-            <form method="post">
-                <label>
+            <form method="post" class="mt-6 space-y-4">
+                <label class="block text-sm font-semibold text-slate-700">
                     Новый пароль (минимум 8 символов)
-                    <input type="password" name="password" required minlength="8" autocomplete="new-password">
+                    <input type="password" name="password" required minlength="8" autocomplete="new-password" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </label>
                 
-                <label>
+                <label class="block text-sm font-semibold text-slate-700">
                     Подтвердите новый пароль
-                    <input type="password" name="password_confirm" required autocomplete="new-password">
+                    <input type="password" name="password_confirm" required autocomplete="new-password" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </label>
                 
-                <button type="submit">Установить новый пароль</button>
+                <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 font-semibold text-white hover:bg-emerald-700">Установить новый пароль</button>
             </form>
         <?php endif; ?>
         
         <?php if (!$show_form && !$success && !$error && empty($token)): ?>
-            <div class="error">
+            <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
                 Неверная или устаревшая ссылка для сброса пароля.
-                <p><a href="forgot-password.php">Запросить новую ссылку</a></p>
+                <p class="mt-2"><a class="text-blue-600 hover:underline" href="forgot-password.php">Запросить новую ссылку</a></p>
             </div>
         <?php endif; ?>
         

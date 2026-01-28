@@ -20,66 +20,57 @@ $userName = $_SESSION['full_name'];
 <head>
     <meta charset="UTF-8">
     <title>Главная — ТСЖ</title>
-    <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
-    <style>
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
-        .card { background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 10px; text-align: center; transition: 0.3s; }
-        .card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); transform: translateY(-5px); }
-        .card h3 { color: #007bff; margin-bottom: 15px; }
-        .card p { font-size: 14px; color: #666; margin-bottom: 20px; }
-        .btn-link { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-        .admin-card { border-color: #ffc107; }
-        .welcome-section { background: #e9ecef; padding: 30px; border-radius: 10px; margin-bottom: 20px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
 <?php render_header(); ?>
 
-<div class="container">
-    <div class="welcome-section">
-        <h1>Добро пожаловать, <?= htmlspecialchars($userName) ?>!</h1>
-        <p>Вы зашли в систему ТСЖ как <strong><?= ($role === 'admin') ? 'Администратор' : 'Жилец' ?></strong>.</p>
+<div class="w-11/12 max-w-5xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <div class="bg-slate-100/70 border border-slate-200 p-6 rounded-lg mb-5">
+        <h1 class="text-2xl font-bold text-slate-900">Добро пожаловать, <?= htmlspecialchars($userName) ?>!</h1>
+        <p class="mt-2 text-slate-700">Вы зашли в систему ТСЖ как <strong><?= ($role === 'admin') ? 'Администратор' : 'Жилец' ?></strong>.</p>
     </div>
 
-    <div class="dashboard-grid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
         <?php if ($role === 'admin'): ?>
             <!-- КАРТОЧКИ ДЛЯ АДМИНА -->
-            <div class="card admin-card">
-                <h3>Заявки жильцов</h3>
-                <p>Просмотр и ответ на новые жалобы и обращения.</p>
-                <a href="admin-requests.php" class="btn-link">Перейти к списку</a>
+            <div class="bg-white p-5 border border-amber-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Заявки жильцов</h3>
+                <p class="text-sm text-slate-600 mb-5">Просмотр и ответ на новые жалобы и обращения.</p>
+                <a href="admin-requests.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">Перейти к списку</a>
             </div>
 
-            <div class="card admin-card">
-                <h3>Показания счетчиков</h3>
-                <p>Сводная таблица по всем квартирам за текущий месяц.</p>
-                <a href="admin-readings.php" class="btn-link">Открыть журнал</a>
+            <div class="bg-white p-5 border border-amber-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Показания счетчиков</h3>
+                <p class="text-sm text-slate-600 mb-5">Сводная таблица по всем квартирам за текущий месяц.</p>
+                <a href="admin-readings.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">Открыть журнал</a>
             </div>
 
-            <div class="card admin-card">
-                <h3>Управление домом</h3>
-                <p>Добавление новостей, работа со списками жильцов.</p>
-                <a href="#" class="btn-link" style="background: #ccc;">В разработке</a>
+            <div class="bg-white p-5 border border-amber-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Управление домом</h3>
+                <p class="text-sm text-slate-600 mb-5">Добавление новостей, работа со списками жильцов.</p>
+                <a href="#" class="inline-flex items-center justify-center rounded-md bg-slate-300 px-4 py-2 text-slate-700 font-medium cursor-not-allowed">В разработке</a>
             </div>
 
         <?php else: ?>
             <!-- КАРТОЧКИ ДЛЯ ЖИЛЬЦА -->
-            <div class="card">
-                <h3>Мои заявки</h3>
-                <p>Подать новую жалобу или посмотреть статус старых.</p>
-                <a href="my-requests.php" class="btn-link">Открыть заявки</a>
+            <div class="bg-white p-5 border border-slate-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Мои заявки</h3>
+                <p class="text-sm text-slate-600 mb-5">Подать новую жалобу или посмотреть статус старых.</p>
+                <a href="my-requests.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">Открыть заявки</a>
             </div>
 
-            <div class="card">
-                <h3>Сдать показания</h3>
-                <p>Передать данные по воде и электричеству за текущий месяц.</p>
-                <a href="meter-submit.php" class="btn-link">Сдать данные</a>
+            <div class="bg-white p-5 border border-slate-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Сдать показания</h3>
+                <p class="text-sm text-slate-600 mb-5">Передать данные по воде и электричеству за текущий месяц.</p>
+                <a href="meter-submit.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">Сдать данные</a>
             </div>
 
-            <div class="card">
-                <h3>Мои платежи</h3>
-                <p>История начислений и оплата квитанций онлайн.</p>
-                <a href="#" class="btn-link" style="background: #ccc;">В разработке</a>
+            <div class="bg-white p-5 border border-slate-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Мои платежи</h3>
+                <p class="text-sm text-slate-600 mb-5">История начислений и оплата квитанций онлайн.</p>
+                <a href="#" class="inline-flex items-center justify-center rounded-md bg-slate-300 px-4 py-2 text-slate-700 font-medium cursor-not-allowed">В разработке</a>
             </div>
         <?php endif; ?>
     </div>

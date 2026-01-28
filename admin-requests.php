@@ -23,42 +23,50 @@ $requests = $pdo->query($sql)->fetchAll();
 <head>
     <meta charset="UTF-8">
     <title>Все заявки (Админ)</title>
-    <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
 <?php render_header(); ?>
-<div class="container">
-    <h1>Журнал всех заявок жильцов</h1>
+<div class="w-11/12 max-w-6xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Журнал всех заявок жильцов</h1>
     
-    <table>
-        <thead>
+    <div class="mt-6 overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+        <thead class="bg-blue-600 text-white">
             <tr>
-                <th>Дата</th>
-                <th>Кв.</th>
-                <th>Жилец</th>
-                <th>Категория</th>
-                <th>Суть</th>
-                <th>Статус</th>
-                <th>Действие</th>
+                <th class="px-4 py-3 text-left font-semibold">Дата</th>
+                <th class="px-4 py-3 text-left font-semibold">Кв.</th>
+                <th class="px-4 py-3 text-left font-semibold">Жилец</th>
+                <th class="px-4 py-3 text-left font-semibold">Категория</th>
+                <th class="px-4 py-3 text-left font-semibold">Суть</th>
+                <th class="px-4 py-3 text-left font-semibold">Статус</th>
+                <th class="px-4 py-3 text-left font-semibold">Действие</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-slate-200">
             <?php foreach ($requests as $req): ?>
-                <tr>
-                    <td><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
-                    <td><?= htmlspecialchars($req['apartment']) ?></td>
-                    <td><?= htmlspecialchars($req['full_name']) ?></td>
-                    <td><?= htmlspecialchars($req['category']) ?></td>
-                    <td><b><?= htmlspecialchars($req['title']) ?></b></td>
-                    <td><?= htmlspecialchars($req['status']) ?></td>
-                    <td>
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 whitespace-nowrap"><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap"><?= htmlspecialchars($req['apartment']) ?></td>
+                    <td class="px-4 py-3"><?= htmlspecialchars($req['full_name']) ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap"><?= htmlspecialchars($req['category']) ?></td>
+                    <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars($req['title']) ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap font-semibold
+                        <?php if (($req['status'] ?? '') === 'new') echo 'text-green-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'in_progress') echo 'text-amber-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'rejected') echo 'text-red-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'done') echo 'text-slate-500 line-through'; ?>
+                    "><?= htmlspecialchars($req['status']) ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap">
                         <!-- Ссылка на файл редактирования, который ты скинул выше -->
-                        <a href="admin_edit.php?id=<?= $req['id'] ?>">✏️ Ответить</a>
+                        <a class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-white text-sm font-semibold hover:bg-blue-700" href="admin_edit.php?id=<?= $req['id'] ?>">✏️ Ответить</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 </body>
 </html>

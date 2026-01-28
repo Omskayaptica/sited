@@ -188,85 +188,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <title>Регистрация в ТСЖ</title>
-  <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
   <!-- Подключение Turnstile - УБЕРИТЕ async defer для контроля загрузки -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
-  <style>
-      .form-group { margin-bottom: 15px; }
-      .form-group span { display: block; margin-bottom: 5px; font-weight: bold; }
-      .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
-      .error-msg { color: red; margin-bottom: 15px; }
-      .cf-turnstile-container { 
-          margin: 20px 0; 
-          padding: 15px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          background: #f9f9f9;
-          min-height: 65px; /* Минимальная высота для виджета */
-      }
-      #turnstile-widget {
-          width: 100%;
-      }
-  </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
   <?php render_header(); ?>
-  <div class="container">
-    <h1>Регистрация жильца</h1>
+  <div class="w-11/12 max-w-xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Регистрация жильца</h1>
 
     <?php if ($error): ?>
-        <div class="error-msg"><?= htmlspecialchars($error) ?></div>
+        <div class="mt-4 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
     <form method="POST" autocomplete="off" class="form" id="registration-form">
       <input type="hidden" name="csrf" value="<?=htmlspecialchars($_SESSION['csrf'] ?? '')?>">
 
       <!-- Основные данные -->
-      <div class="form-group">
-        <label>
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
             <span>Email *</span>
-            <input type="email" name="email" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+            <input type="email" name="email" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 
-      <div class="form-group">
-        <label>
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
             <span>Пароль *</span>
-            <input type="password" name="password" required minlength="8">
+            <input type="password" name="password" required minlength="8" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 
       <!-- Данные для ТСЖ -->
-      <div class="form-group">
-        <label>
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
             <span>ФИО (Полностью) *</span>
-            <input type="text" name="full_name" required placeholder="Иванов Иван Иванович" value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>">
+            <input type="text" name="full_name" required placeholder="Иванов Иван Иванович" value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 
-      <div class="form-group">
-        <label>
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
             <span>Номер квартиры *</span>
-            <input type="text" name="apartment" required placeholder="42" value="<?= htmlspecialchars($_POST['apartment'] ?? '') ?>">
+            <input type="text" name="apartment" required placeholder="42" value="<?= htmlspecialchars($_POST['apartment'] ?? '') ?>" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 
-      <div class="form-group">
-        <label>
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
             <span>Телефон</span>
-            <input type="tel" name="phone" placeholder="+7 (999) 000-00-00" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+            <input type="tel" name="phone" placeholder="+7 (999) 000-00-00" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 
       <!-- Cloudflare Turnstile Widget -->
-      <div class="cf-turnstile-container">
-          <div id="turnstile-widget"></div>
+      <div class="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4 min-h-[65px]">
+          <div id="turnstile-widget" class="w-full"></div>
       </div>
 
-      <button type="submit" id="submit-btn">Зарегистрироваться</button>
+      <button type="submit" id="submit-btn" class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Зарегистрироваться</button>
 
-      <p style="margin-top: 15px;">
-          Уже есть аккаунт? <a href="login.php">Войти</a>
+      <p class="mt-4 text-sm text-slate-700">
+          Уже есть аккаунт? <a class="text-blue-600 hover:underline" href="login.php">Войти</a>
       </p>
     </form>
   </div>

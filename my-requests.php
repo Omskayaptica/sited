@@ -49,66 +49,82 @@ $requests = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <title>Мои заявки</title>
-    <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
 <?php render_header(); ?>
-<div class="container">
-    <h1>Мои заявки в ТСЖ</h1>
+<div class="w-11/12 max-w-5xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Мои заявки в ТСЖ</h1>
 
     <!-- Форма подачи -->
-    <div class="form-box" style="background: #f4f4f4; padding: 20px; border-radius: 8px;">
-        <h3>Подать новую заявку</h3>
-        <form method="post">
+    <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-6">
+        <h3 class="text-lg font-semibold text-slate-900 text-center">Подать новую заявку</h3>
+        <form method="post" class="mt-4 space-y-4">
             <input type="hidden" name="csrf" value="<?= $_SESSION['csrf'] ?>">
             <input type="hidden" name="create_request" value="1">
             
-            <label>Категория:</label><br>
-            <select name="category">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Категория</label>
+                <select name="category" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 <option value="Сантехника">Сантехника</option>
                 <option value="Электрика">Электрика</option>
                 <option value="Уборка">Уборка</option>
                 <option value="Другое">Другое</option>
-            </select><br><br>
+                </select>
+            </div>
             
-            <label>Тема:</label><br>
-            <input type="text" name="title" required style="width: 100%"><br><br>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Тема</label>
+                <input type="text" name="title" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            </div>
             
-            <label>Описание:</label><br>
-            <textarea name="description" required style="width: 100%; height: 80px;"></textarea><br><br>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Описание</label>
+                <textarea name="description" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 h-24"></textarea>
+            </div>
             
-            <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none;">Отправить</button>
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Отправить</button>
         </form>
     </div>
 
-    <hr>
+    <hr class="my-8 border-slate-200">
 
     <!-- Таблица своих заявок -->
-    <table>
-        <thead>
+    <div class="mt-2 overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+        <thead class="bg-blue-600 text-white">
             <tr>
-                <th>Дата</th>
-                <th>Категория</th>
-                <th>Проблема</th>
-                <th>Статус</th>
-                <th>Ответ ТСЖ</th>
+                <th class="px-4 py-3 text-left font-semibold">Дата</th>
+                <th class="px-4 py-3 text-left font-semibold">Категория</th>
+                <th class="px-4 py-3 text-left font-semibold">Проблема</th>
+                <th class="px-4 py-3 text-left font-semibold">Статус</th>
+                <th class="px-4 py-3 text-left font-semibold">Ответ ТСЖ</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-slate-200">
             <?php foreach ($requests as $req): ?>
-                <tr>
-                    <td><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
-                    <td><?= htmlspecialchars($req['category']) ?></td>
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 whitespace-nowrap"><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap"><?= htmlspecialchars($req['category']) ?></td>
                     <td>
-                        <b><?= htmlspecialchars($req['title']) ?></b><br>
-                        <small><?= htmlspecialchars($req['description']) ?></small>
+                        <div class="px-4 py-3">
+                            <div class="font-semibold text-slate-900"><?= htmlspecialchars($req['title']) ?></div>
+                            <div class="mt-1 text-slate-600"><?= htmlspecialchars($req['description']) ?></div>
+                        </div>
                     </td>
-                    <td><?= htmlspecialchars($req['status']) ?></td>
-                    <td><?= htmlspecialchars($req['admin_comment'] ?? 'Ожидает ответа') ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap font-semibold
+                        <?php if (($req['status'] ?? '') === 'new') echo 'text-green-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'in_progress') echo 'text-amber-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'rejected') echo 'text-red-600'; ?>
+                        <?php if (($req['status'] ?? '') === 'done') echo 'text-slate-500 line-through'; ?>
+                    "><?= htmlspecialchars($req['status']) ?></td>
+                    <td class="px-4 py-3"><?= htmlspecialchars($req['admin_comment'] ?? 'Ожидает ответа') ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 </body>
 </html>

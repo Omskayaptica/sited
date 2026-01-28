@@ -112,64 +112,56 @@ if (empty($_SESSION['csrf_token'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Передача показаний</title>
-    <link rel="stylesheet" href="style_new.css?v=<?= time() ?>">
-    <style>
-        .form-box { max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; box-sizing: border-box; }
-        .btn-submit { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; width: 100%; border-radius: 4px; }
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
-        .success { color: green; background: #e8f5e9; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-        .error { color: red; background: #ffebee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-        .warning { color: #856404; background: #fff3cd; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
 <?php render_header(); ?>
-<div class="container">
-    <h1>Передача показаний счетчиков</h1>
-    <p>Квартира №: <strong><?= htmlspecialchars($_SESSION['apartment']) ?></strong></p>
-    <p>Месяц: <strong><?= date('F Y') ?></strong></p>
+<div class="w-11/12 max-w-3xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h1 class="text-2xl font-bold text-slate-900">Передача показаний счетчиков</h1>
+    <p class="mt-2 text-slate-700">Квартира №: <strong><?= htmlspecialchars($_SESSION['apartment']) ?></strong></p>
+    <p class="text-slate-700">Месяц: <strong><?= date('F Y') ?></strong></p>
 
     <?php if ($alreadySubmitted): ?>
-        <div class="warning">
+        <div class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
             <strong>Внимание!</strong> Вы уже передавали показания за этот месяц.
         </div>
     <?php endif; ?>
 
-    <div class="form-box">
-        <?php if ($success): ?><div class="success"><?= $success ?></div><?php endif; ?>
-        <?php if ($error): ?><div class="error"><?= $error ?></div><?php endif; ?>
+    <div class="mt-6 max-w-md mx-auto rounded-lg border border-slate-200 bg-white p-6">
+        <?php if ($success): ?><div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?= $success ?></div><?php endif; ?>
+        <?php if ($error): ?><div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= $error ?></div><?php endif; ?>
 
         <?php if (!$alreadySubmitted): ?>
-        <form method="post" id="meterForm">
+        <form method="post" id="meterForm" class="space-y-4">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             
-            <div class="form-group">
-                <label>Холодная вода (ХВС), м³</label>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Холодная вода (ХВС), м³</label>
                 <input type="number" step="0.001" min="0" max="99999" 
                        name="cold_water" required placeholder="0.000"
-                       oninput="validateInput(this)">
+                       oninput="validateInput(this)"
+                       class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
             </div>
-            <div class="form-group">
-                <label>Горячая вода (ГВС), м³</label>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Горячая вода (ГВС), м³</label>
                 <input type="number" step="0.001" min="0" max="99999" 
                        name="hot_water" required placeholder="0.000"
-                       oninput="validateInput(this)">
+                       oninput="validateInput(this)"
+                       class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
             </div>
-            <div class="form-group">
-                <label>Электроэнергия, кВт·ч</label>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700">Электроэнергия, кВт·ч</label>
                 <input type="number" step="0.001" min="0" max="99999" 
                        name="electricity" required placeholder="0.000"
-                       oninput="validateInput(this)">
+                       oninput="validateInput(this)"
+                       class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
             </div>
-            <button type="submit" class="btn-submit" id="submitBtn">
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-700" id="submitBtn">
                 Отправить показания
             </button>
         </form>
         <?php else: ?>
-            <p>Следующая передача показаний будет доступна с 1 числа следующего месяца.</p>
+            <p class="text-sm text-slate-700">Следующая передача показаний будет доступна с 1 числа следующего месяца.</p>
         <?php endif; ?>
     </div>
 </div>
