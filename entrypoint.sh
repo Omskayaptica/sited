@@ -1,22 +1,23 @@
 #!/bin/bash
-# Инициализация при первом запуске контейнера
+set -e
 
-if [ ! -d "/var/www/mysite/vendor" ]; then
-    echo "Installing Composer dependencies..."
-    cd /var/www/mysite
-    composer install --no-interaction --prefer-dist
-fi
+# 1. Инициализируем БД, если файла базы нет или он пустой
+# Используем путь /var/www/mysite/db/users.db как в вашем скрипте
+DB_FILE="/var/www/mysite/db/users.db"
 
-# Инициализируем БД если её нет или пересоздаём
-if [ ! -f "/var/www/mysite/db/users.db" ] || [ ! -s "/var/www/mysite/db/users.db" ]; then
-    echo "Initializing database..."
+if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
+    echo "База данных не найдена. Инициализация через init_db.php..."
     php /var/www/mysite/.docker/init_db.php
 fi
 
-# Исправляем права на БД файл (чтобы www-data мог писать)
-chmod 666 /var/www/mysite/db/users.db
-chown www-data:www-data /var/www/mysite/db/users.db
-chmod 777 /var/www/mysite/db
+# 2. Исправляем права (SQLite критично, чтобы папка и файл были доступны на запись)
+echo "Setting permissions for SQLite..."
+chown -R www-data:www-data /var/www/mysite/db
+chmod 775 /var/www/mysite/db
+if [ -f "$DB_FILE" ]; then
+    chmod 664 "$DB_FILE"
+fi
 
-# Запускаем PHP-FPM
+# 3. Запускаем PHP-FPM
+echo "Starting PHP-FPM..."
 exec php-fpm
