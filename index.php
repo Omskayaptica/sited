@@ -70,7 +70,9 @@ $userName = $_SESSION['full_name'];
             <div class="bg-white p-5 border border-slate-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
                 <h3 class="text-lg font-semibold text-blue-600 mb-3">Мои платежи</h3>
                 <p class="text-sm text-slate-600 mb-5">История начислений и оплата квитанций онлайн.</p>
-                <a href="#" class="inline-flex items-center justify-center rounded-md bg-slate-300 px-4 py-2 text-slate-700 font-medium cursor-not-allowed">В разработке</a>
+                <a href="my-payments.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">
+                Перейти к оплате
+                </a>
             </div>
         <?php endif; ?>
     </div>

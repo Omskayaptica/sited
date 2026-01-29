@@ -74,21 +74,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$alreadySubmitted) {
             }
 
             if (empty($error)) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO meter_readings 
-                    (user_id, apartment, cold_water, hot_water, electricity, month_year) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ");
-                $stmt->execute([
-                    $_SESSION['user_id'],
-                    $_SESSION['apartment'],
-                    $cold_water,
-                    $hot_water,
-                    $electricity,
-                    $current_month
-                ]);
-                $success = "Показания за " . date('m.Y') . " успешно переданы!";
-                $alreadySubmitted = true; // Блокируем повторную отправку
+                // Делаем операцию атомарной: показания + счет.
+                // Если создание счета упадёт, откатываем вставку показаний и НЕ показываем успех.
+                $pdo->beginTransaction();
+                try {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO meter_readings 
+                        (user_id, apartment, cold_water, hot_water, electricity, month_year) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute([
+                        $_SESSION['user_id'],
+                        $_SESSION['apartment'],
+                        $cold_water,
+                        $hot_water,
+                        $electricity,
+                        $current_month
+                    ]);
+
+                $tariff_cold = 45.50;  // руб за м³
+                $tariff_hot  = 215.00; // руб за м³
+                $tariff_elec = 5.90;   // руб за кВт·ч
+                $fix_price   = 1200.00; // Фиксированный платеж (содержание жилья, вывоз мусора)
+
+                // 2. Считаем расход (Текущее - Предыдущее)
+                // $prev мы получили выше для валидации. Если $prev нет, значит это первая подача — считаем расход 0 (иначе выставим счет за все годы)
+                $diff_cold = ($prev) ? ($cold_water - $prev['cold_water']) : 0;
+                $diff_hot  = ($prev) ? ($hot_water - $prev['hot_water']) : 0;
+                $diff_elec = ($prev) ? ($electricity - $prev['electricity']) : 0;
+
+                // Защита от глюков: если вдруг разница отрицательная (хотя мы проверяли), ставим 0
+                $diff_cold = max(0, $diff_cold);
+                $diff_hot  = max(0, $diff_hot);
+                $diff_elec = max(0, $diff_elec);
+
+                // 3. Считаем итоговую сумму
+                $bill_amount = ($diff_cold * $tariff_cold) +
+                               ($diff_hot  * $tariff_hot) +
+                               ($diff_elec * $tariff_elec) +
+                               $fix_price;
+
+                $bill_amount = round($bill_amount, 2); // Округляем до копеек
+
+                // 4. Создаем счет в таблице bills
+                // Формируем период в формате '2025-01'
+                $bill_period = date('Y-m');
+
+                    $billStmt = $pdo->prepare("
+                        INSERT INTO bills (user_id, amount, period, status) 
+                        VALUES (?, ?, ?, 'unpaid')
+                    ");
+                    $billStmt->execute([$_SESSION['user_id'], $bill_amount, $bill_period]);
+
+                // --- КОНЕЦ БЛОКА АВТОМАТИЧЕСКОГО РАСЧЕТА ---
+
+                    // Операция полностью успешна: и показания сохранены, и счет создан
+                    $success = "Показания приняты! Сформирован счет на сумму: " . $bill_amount . " ₽";
+
+                    $pdo->commit();
+                    $alreadySubmitted = true; // Блокируем повторную отправку
+                } catch (PDOException $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+
+                    // Внутри транзакции сюда попадают ВСЕ ошибки (в т.ч. дубликат показаний)
+                    if ($e->getCode() == 23000) { // Duplicate entry
+                        $error = "Вы уже передавали показания за этот месяц!";
+                        $success = '';
+                        $alreadySubmitted = true;
+                    } else {
+                        error_log("Ошибка при сохранении показаний/создании счета: " . $e->getMessage());
+                        $error = "Не удалось сформировать счет. Показания не сохранены. Попробуйте позже.";
+                        $success = '';
+                        $alreadySubmitted = false;
+                    }
+                }
             }
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) { // Duplicate entry

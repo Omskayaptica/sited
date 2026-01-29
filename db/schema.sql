@@ -57,6 +57,17 @@ CREATE TABLE meter_readings (
     UNIQUE (user_id, apartment, month_year) -- Запрет дублей
 );
 
+CREATE TABLE bills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    amount REAL NOT NULL,           -- Сумма долга
+    period TEXT NOT NULL,           -- За какой месяц (например '2025-01')
+    status TEXT DEFAULT 'unpaid',   -- 'unpaid' (не оплачено) или 'paid' (оплачено)
+    paid_at DATETIME DEFAULT NULL,  -- Дата оплаты
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
 -- Создайте индекс для быстрого поиска
 CREATE INDEX idx_month_year ON meter_readings(month_year);
 CREATE INDEX idx_user_apartment ON meter_readings(user_id, apartment);
