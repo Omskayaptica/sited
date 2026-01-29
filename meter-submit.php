@@ -227,6 +227,66 @@ if (empty($_SESSION['csrf_token'])) {
     </div>
 </div>
 
+<?php
+// Получаем историю показаний (последние 12 месяцев)
+try {
+    $histStmt = $pdo->prepare("
+        SELECT cold_water, hot_water, electricity, reading_date, month_year 
+        FROM meter_readings 
+        WHERE user_id = ? AND apartment = ? 
+        ORDER BY month_year DESC, reading_date DESC 
+        LIMIT 12
+    ");
+    $histStmt->execute([$_SESSION['user_id'], $_SESSION['apartment']]);
+    $history = $histStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $history = [];
+}
+?>
+
+<div class="w-11/12 max-w-3xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
+    <h2 class="text-xl font-bold text-slate-900 mb-4">История показаний</h2>
+    
+    <?php if (count($history) > 0): ?>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Месяц</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Дата подачи</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ХВС</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ГВС</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Эл-во</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-200">
+                <?php foreach ($history as $row): ?>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                        <?= date('m.Y', strtotime($row['month_year'])) ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <?= date('d.m.Y H:i', strtotime($row['reading_date'])) ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                        <?= htmlspecialchars($row['cold_water']) ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                        <?= htmlspecialchars($row['hot_water']) ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                        <?= htmlspecialchars($row['electricity']) ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+        <p class="text-slate-500 italic">История показаний пуста.</p>
+    <?php endif; ?>
+</div>
+
 <script>
 function validateInput(input) {
     // Клиентская валидация: не более 3 знаков после запятой
