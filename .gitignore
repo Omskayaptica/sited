@@ -38,6 +38,7 @@ node_modules/
 dist/
 build/
 src/
+src/config.php
 db/
 inc/init.php
         composer.json
