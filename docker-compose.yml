@@ -7,7 +7,7 @@ services:
     restart: always
     env_file: .env
     volumes:
-      - ./public:/var/www/mysite:ro
+      - ./public:/var/www/mysite
       - ./vendor:/var/www/mysite/vendor:ro
       - ./private:/var/www/private:rw
 
