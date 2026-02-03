@@ -1,28 +1,24 @@
 #!/bin/bash
 set -e
 
-DB_FILE="/var/www/mysite/db/users.db"
-INIT_SCRIPT="/var/www/mysite/.docker/init_db.php"
+DB_DIR="/var/www/mysite/db"
+DB_FILE="$DB_DIR/users.db"
 
-if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
-    echo "База данных не найдена или пуста."
-    if [ -f "$INIT_SCRIPT" ]; then
-        echo "Инициализация через $INIT_SCRIPT..."
-        php "$INIT_SCRIPT"
-    else
-        echo "Предупреждение: Файл инициализации $INIT_SCRIPT не найден. Пропускаю..."
+# Создаем папку БД если её нет (важно при первом запуске)
+if [ ! -d "$DB_DIR" ]; then
+    mkdir -p "$DB_DIR"
+fi
+
+# Проверяем права на папку с базой
+chown -R www-data:www-data "$DB_DIR"
+chmod -R 775 "$DB_DIR"
+
+# Если базы нет — инициируем (твой скрипт)
+if [ ! -s "$DB_FILE" ]; then
+    if [ -f "/var/www/mysite/.docker/init_db.php" ]; then
+        php "/var/www/mysite/.docker/init_db.php"
+        chown www-data:www-data "$DB_FILE"
     fi
 fi
 
-
-if [ -d "/var/www/mysite/db" ]; then
-    chown -R www-data:www-data /var/www/mysite/db
-    chmod -R 775 /var/www/mysite/db
-fi
-
-
-if [ $# -gt 0 ]; then
-    exec "$@"
-else
-    exec php-fpm
-fi
+exec php-fpm

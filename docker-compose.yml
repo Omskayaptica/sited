@@ -4,20 +4,29 @@ services:
   php:
     build: .
     container_name: mysite_php
-    volumes:
-      # На сервере мы всё равно делаем git pull, 
-      # поэтому проброс папки гарантирует, что код будет самым свежим
-      - .:/var/www/mysite
-      - ./db:/var/www/mysite/db
     restart: always
+    env_file: .env
+    volumes:
+      # Пробрасываем ТОЛЬКО папку с базой. 
+      # Код берется из образа, собранного в Dockerfile
+      - ./db:/var/www/mysite/db
+    healthcheck:
+      test: ["CMD-SHELL", "cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   nginx:
     image: nginx:alpine
     container_name: mysite_nginx
+    restart: always
     ports:
-      - "8080:80"
+      # Доступ только локально! Снаружи зайти нельзя.
+      - "127.0.0.1:8080:80"
     volumes:
-      - .:/var/www/mysite  # Nginx видит ту же папку, что и PHP
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      # Nginx все еще нужен доступ к папке проекта для отдачи статики
+      - .:/var/www/mysite:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
-      - php
+      php:
+        condition: service_healthy

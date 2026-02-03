@@ -18,9 +18,11 @@ jobs:
         # Проверяем все файлы .php на ошибки синтаксиса
         run: docker run --rm mysite-test find . -name "*.php" -exec php -l {} \;
 
+# ... (твоя секция test остается без изменений)
+
   deploy:
     runs-on: ubuntu-latest
-    needs: test # Деплой запустится только если Lint прошел!
+    needs: test
     steps:
       - name: Executing remote ssh commands
         uses: appleboy/ssh-action@v1.0.3
@@ -33,9 +35,16 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
-            # Пересборка образа (подтянет новый код через COPY)
-            docker compose build --no-cache
+            # Сборка и запуск
+            docker compose build
             docker compose up -d
             
-            # Чистим старые образы
+            # ПРОВЕРКА: Даем 5 секунд и смотрим статус
+            sleep 5
+            if [ "$(docker inspect -f '{{.State.Running}}' mysite_php)" != "true" ]; then
+              echo "Error: Container mysite_php is not running!"
+              docker logs mysite_php
+              exit 1
+            fi
+            
             docker image prune -f

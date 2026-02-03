@@ -7,9 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (file_exists('/var/www/mysite/inc/config.local.php')) {
-    include '/var/www/mysite/inc/config.local.php';
-}
+define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: 'default_value_if_not_set');
+define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY'));
 
 // CSRF token
 if (empty($_SESSION['csrf'])) {
