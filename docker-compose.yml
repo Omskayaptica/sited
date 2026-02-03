@@ -7,9 +7,7 @@ services:
     restart: always
     env_file: .env
     volumes:
-      # Пробрасываем ТОЛЬКО папку с базой. 
-      # Код берется из образа, собранного в Dockerfile
-      - ./db:/var/www/mysite/db
+      - ./_hidden_db_:/var/www/mysite/db
 
   nginx:
     image: nginx:alpine
