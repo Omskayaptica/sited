@@ -1,6 +1,5 @@
 FROM php:8.1-fpm
 
-# Устанавливаем зависимости и чистим кэш в одном слое
 RUN apt-get update && apt-get install -y \
     sqlite3 \
     libsqlite3-dev \
@@ -8,26 +7,28 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     libfcgi-bin \
+    curl \
     && docker-php-ext-install pdo pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer 
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/mysite
 
-# Кэшируем зависимости
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-scripts --no-autoloader --prefer-dist --no-dev
+RUN composer install --no-interaction --no-scripts \
+    --no-autoloader --prefer-dist --no-dev
 
-# Копируем код
 COPY . .
 RUN composer dump-autoload --optimize
 
-# Права на файлы (в проде лучше не давать всё www-data, но для начала ок)
 RUN chown -R www-data:www-data /var/www/mysite
 
-# init_db.php должен быть доступен даже если /var/www/mysite замонтирован volume'ом
 COPY .docker/init_db.php /init_db.php
+
+# Healthcheck скрипт
+COPY docker/healthcheck.sh /usr/local/bin/php-fpm-healthcheck
+RUN chmod +x /usr/local/bin/php-fpm-healthcheck
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

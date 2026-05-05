@@ -15,6 +15,7 @@ CREATE TABLE users (
     verify_code_hash TEXT,
     verify_expires INTEGER,
     verify_attempts INT DEFAULT 0,
+    last_password_reset DATETIME DEFAULT NULL,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

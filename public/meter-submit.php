@@ -36,7 +36,7 @@ try {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$alreadySubmitted) {
     // CSRF защита - ОБЯЗАТЕЛЬНО!
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf_token'] ?? '')) {
         die("Ошибка безопасности. Пожалуйста, обновите страницу.");
     }
 
@@ -194,7 +194,7 @@ if (empty($_SESSION['csrf_token'])) {
 
         <?php if (!$alreadySubmitted): ?>
         <form method="post" id="meterForm" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
             
             <div>
                 <label class="block text-sm font-semibold text-slate-700">Холодная вода (ХВС), м³</label>

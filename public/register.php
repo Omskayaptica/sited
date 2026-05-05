@@ -72,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_post = $_POST['csrf'] ?? '';
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
+    $password_confirm = $_POST['password_confirm'] ?? '';
     $cf_turnstile_response = $_POST['cf-turnstile-response'] ?? '';
     
     // Новые поля для ТСЖ
@@ -101,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Некорректный email.";
     } elseif (strlen($password) < 8) {
         $error = "Пароль должен быть не менее 8 символов.";
+    } elseif ($password !== $password_confirm) {
+        $error = "Пароли не совпадают.";
     } elseif (empty($fullName) || empty($apartment)) {
         $error = "Пожалуйста, заполните ФИО и номер квартиры.";
     }
@@ -217,6 +220,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label class="block text-sm font-semibold text-slate-700">
             <span>Пароль *</span>
             <input type="password" name="password" required minlength="8" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+        </label>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-700">
+            <span>Повторите пароль *</span>
+            <input type="password" name="password_confirm" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
       </div>
 

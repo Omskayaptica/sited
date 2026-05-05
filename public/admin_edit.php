@@ -1,7 +1,6 @@
 <?php
-// public/admin_edit.php
 ob_start();
-require_once '/var/www/mysite/inc/init.php'; // Тут старт сессии
+require_once '/var/www/mysite/inc/init.php'; 
 require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
 

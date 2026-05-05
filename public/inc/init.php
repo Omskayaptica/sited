@@ -1,8 +1,8 @@
 <?php
 // inc/init.php — единый init: CSRF, PDO, простая защита от брута
-// ВАЖНО: session_set_cookie_params теперь в inc/session_config.php (вызывается первым)
 
-// Убеждаемся что сессия запущена (в случае если session_config.php не подключен)
+
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -21,10 +21,8 @@ if (!isset($_SESSION['failed_login'])) {
 }
 function too_many_attempts(): bool {
     $f = &$_SESSION['failed_login'];
-    // порог: 5 попыток за 5 минут
     if ($f['count'] >= 5 && (time() - $f['first_ts']) < 300) return true;
     if ((time() - $f['first_ts']) >= 300) {
-        // сбрасываем старые попытки
         $f = ['count' => 0, 'first_ts' => 0];
     }
     return false;
@@ -36,5 +34,15 @@ function record_failed_attempt(): void {
 }
 function reset_attempts(): void {
     $_SESSION['failed_login'] = ['count' => 0, 'first_ts' => 0];
+}
+
+function statusLabel(string $status): string {
+    return match($status) {
+        'new'         => 'Новая',
+        'in_progress' => 'В работе',
+        'done'        => 'Выполнена',
+        'rejected'    => 'Отклонена',
+        default       => $status
+    };
 }
 

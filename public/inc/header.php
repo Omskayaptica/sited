@@ -22,6 +22,7 @@ function render_header(): void {
                     <?php else: ?>
                         <a href="meter-submit.php" class="rounded-md px-3 py-2 text-slate-600 font-medium transition hover:bg-slate-100 hover:text-blue-600">⚡ Сдать показания</a>
                         <a href="my-requests.php" class="rounded-md px-3 py-2 text-slate-600 font-medium transition hover:bg-slate-100 hover:text-blue-600">📩 Мои заявки</a>
+                        <a href="profile.php" class="rounded-md px-3 py-2 text-slate-600 font-medium transition hover:bg-slate-100 hover:text-blue-600">👤 Профиль</a>
                     <?php endif; ?>
 
                     <div class="mt-2 flex flex-col gap-2 border-t border-slate-200 pt-3 sm:mt-0 sm:flex-row sm:items-center sm:gap-3 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">

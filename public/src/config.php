@@ -1,21 +1,44 @@
 <?php
+/**
+ * src/config.php - конфигурация для отправки писем
+ * 
+ * Загружает SMTP параметры из переменных окружения (.env файл)
+ * 
+ * Обязательные переменные:
+ * - SMTP_HOST
+ * - SMTP_USER
+ * - SMTP_PASS
+ * 
+ * Опциональные переменные:
+ * - SMTP_PORT (по умолчанию 465)
+ * - SMTP_SECURE (по умолчанию ssl)
+ * - MAIL_FROM_EMAIL
+ * - MAIL_FROM_NAME
+ */
 
-// Конфигурация почты и других сервисов.
-// ВАЖНО: реальные пароли лучше передавать через переменные окружения (.env),
-// а не хранить в репозитории.
+// Обязательные параметры
+$requiredParams = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'];
+foreach ($requiredParams as $param) {
+    if (!getenv($param)) {
+        throw new RuntimeException("Missing required environment variable: $param");
+    }
+}
 
 return [
-    // SMTP сервер
-    'smtp_host'   => getenv('SMTP_HOST') ?: 'smtp.example.com',
+    // ============ SMTP Сервер ============
+    'smtp_host'   => getenv('SMTP_HOST'),
     'smtp_port'   => (int)(getenv('SMTP_PORT') ?: 465),
-    'smtp_secure' => getenv('SMTP_SECURE') ?: 'ssl', // ssl / tls
-
-    // Учетные данные
-    'smtp_user'   => getenv('SMTP_USER') ?: 'user@example.com',
-    'smtp_pass'   => getenv('SMTP_PASS') ?: 'change-me',
-
-    // Отправитель по умолчанию
-    'from_email'  => getenv('MAIL_FROM_EMAIL') ?: 'no-reply@example.com',
-    'from_name'   => getenv('MAIL_FROM_NAME') ?: 'ТСЖ "Наш Дом"',
+    'smtp_secure' => getenv('SMTP_SECURE') ?: 'ssl',
+    
+    // ============ Учётные данные ============
+    'smtp_user'   => getenv('SMTP_USER'),
+    'smtp_pass'   => getenv('SMTP_PASS'),
+    
+    // ============ Отправитель ============
+    'from_email'  => getenv('MAIL_FROM_EMAIL') ?: getenv('SMTP_USER'),
+    'from_name'   => getenv('MAIL_FROM_NAME') ?: 'Application',
+    
+    // ============ Дополнительно ============
+    'timeout'     => (int)(getenv('MAIL_TIMEOUT') ?: 10),
+    'from_reply_email' => getenv('MAIL_REPLY_EMAIL') ?: null,
 ];
-

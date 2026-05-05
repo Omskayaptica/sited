@@ -4,12 +4,19 @@
 $dbPath = '/var/www/private/_hidden_db_/database.db';
 $schemaPath = '/var/www/private/_hidden_db_/schema.sql';
 
-// Удаляем старую БД если существует
-if (file_exists($dbPath)) {
-    unlink($dbPath);
+// Проверяем есть ли ДБ и не пустой ли он (чтобы не перезаписывать существующую)
+if (file_exists($dbPath) && filesize($dbPath) > 0) {
+    echo "✓ Database already exists, skipping\n";
+    exit(0);
 }
 
 try {
+    // Проверяем наличие файла схемы
+    if (!file_exists($schemaPath)) {
+        echo "✗ Schema file not found: $schemaPath\n";
+        exit(1);
+    }
+    
     // Создаём новую БД
     $pdo = new PDO("sqlite:$dbPath");
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

@@ -1,11 +1,70 @@
+# .dockerignore - файлы, которые не копировать в Docker образ
+
+# ============ Система контроля версий ============
 .git
 .gitignore
+.gitattributes
+
+# ============ Конфигурация (КРИТИЧНО - ПАРОЛИ!) ============
 .env
 .env.local
-README.md
+.env.*.local
+.env.production.local
+
+# ============ IDE и редакторы ============
+.vscode/
+.vscode
+.idea/
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============ Зависимости (пересобираются в Dockerfile) ============
 vendor/
 node_modules/
-.vscode
-.idea
+composer.lock
+package-lock.json
+yarn.lock
+
+# ============ Логи и временные файлы ============
 *.log
-.DS_Store
+logs/
+tmp/
+temp/
+cache/
+.cache/
+
+# ============ Документация (не нужна в контейнере) ============
+README.md
+LICENSE
+CHANGELOG.md
+docs/
+
+# ============ GitHub/GitLab ============
+.github/
+.gitlab-ci.yml
+
+# ============ Docker (не копировать сам в себя) ============
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# ============ CI/CD ============
+.travis.yml
+.circleci/
+jenkins/
+
+# ============ Тесты (опционально) ============
+tests/
+phpunit.xml
+.phpunit.cache/
+
+# ============ Прочее ============
+.editorconfig
+.prettierrc
+.eslintrc
+Makefile
+*.bak
+*.tmp

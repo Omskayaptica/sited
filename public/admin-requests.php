@@ -5,12 +5,10 @@ require_once '/var/www/mysite/inc/init.php';
 require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
 
-// Проверка прав админа
 if (($_SESSION['role'] ?? '') !== 'admin') {
     die("Доступ только для администрации.");
 }
 
-// Получаем ВСЕ заявки с именами жильцов
 $sql = "SELECT r.*, u.full_name, u.apartment 
         FROM requests r 
         JOIN users u ON r.user_id = u.id 
@@ -57,9 +55,8 @@ $requests = $pdo->query($sql)->fetchAll();
                         <?php if (($req['status'] ?? '') === 'in_progress') echo 'text-amber-600'; ?>
                         <?php if (($req['status'] ?? '') === 'rejected') echo 'text-red-600'; ?>
                         <?php if (($req['status'] ?? '') === 'done') echo 'text-slate-500 line-through'; ?>
-                    "><?= htmlspecialchars($req['status']) ?></td>
+                    "><?= statusLabel($req['status']) ?></td>
                     <td class="px-4 py-3 whitespace-nowrap">
-                        <!-- Ссылка на файл редактирования, который ты скинул выше -->
                         <a class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-white text-sm font-semibold hover:bg-blue-700" href="admin_edit.php?id=<?= $req['id'] ?>">✏️ Ответить</a>
                     </td>
                 </tr>

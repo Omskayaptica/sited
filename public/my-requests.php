@@ -91,40 +91,49 @@ $requests = $stmt->fetchAll();
     <hr class="my-8 border-slate-200">
 
     <!-- Таблица своих заявок -->
-    <div class="mt-2 overflow-x-auto">
-    <table class="w-full border-collapse text-sm">
-        <thead class="bg-blue-600 text-white">
-            <tr>
-                <th class="px-4 py-3 text-left font-semibold">Дата</th>
-                <th class="px-4 py-3 text-left font-semibold">Категория</th>
-                <th class="px-4 py-3 text-left font-semibold">Проблема</th>
-                <th class="px-4 py-3 text-left font-semibold">Статус</th>
-                <th class="px-4 py-3 text-left font-semibold">Ответ ТСЖ</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200">
-            <?php foreach ($requests as $req): ?>
-                <tr class="hover:bg-slate-50">
-                    <td class="px-4 py-3 whitespace-nowrap"><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
-                    <td class="px-4 py-3 whitespace-nowrap"><?= htmlspecialchars($req['category']) ?></td>
-                    <td>
-                        <div class="px-4 py-3">
-                            <div class="font-semibold text-slate-900"><?= htmlspecialchars($req['title']) ?></div>
-                            <div class="mt-1 text-slate-600"><?= htmlspecialchars($req['description']) ?></div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap font-semibold
-                        <?php if (($req['status'] ?? '') === 'new') echo 'text-green-600'; ?>
-                        <?php if (($req['status'] ?? '') === 'in_progress') echo 'text-amber-600'; ?>
-                        <?php if (($req['status'] ?? '') === 'rejected') echo 'text-red-600'; ?>
-                        <?php if (($req['status'] ?? '') === 'done') echo 'text-slate-500 line-through'; ?>
-                    "><?= htmlspecialchars($req['status']) ?></td>
-                    <td class="px-4 py-3"><?= htmlspecialchars($req['admin_comment'] ?? 'Ожидает ответа') ?></td>
+    <?php if (empty($requests)): ?>
+        <div class="py-16 text-center text-slate-500">
+            <div class="text-5xl mb-4">📭</div>
+            <p class="font-semibold text-slate-700">У вас пока нет заявок</p>
+            <p class="mt-1 text-sm">Заполните форму выше, чтобы подать первую</p>
+        </div>
+    <?php else: ?>
+        <div class="mt-2 overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold">Дата</th>
+                    <th class="px-4 py-3 text-left font-semibold">Категория</th>
+                    <th class="px-4 py-3 text-left font-semibold">Проблема</th>
+                    <th class="px-4 py-3 text-left font-semibold">Статус</th>
+                    <th class="px-4 py-3 text-left font-semibold">Ответ ТСЖ</th>
                 </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+                <?php foreach ($requests as $req): ?>
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 whitespace-nowrap"><?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></td>
+                        <td class="px-4 py-3 whitespace-nowrap"><?= htmlspecialchars($req['category']) ?></td>
+                        <td>
+                            <div class="px-4 py-3">
+                                <div class="font-semibold text-slate-900"><?= htmlspecialchars($req['title']) ?></div>
+                                <div class="mt-1 text-slate-600"><?= htmlspecialchars($req['description']) ?></div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap font-semibold
+                            <?php if (($req['status'] ?? '') === 'new') echo 'text-green-600'; ?>
+                            <?php if (($req['status'] ?? '') === 'in_progress') echo 'text-amber-600'; ?>
+                            <?php if (($req['status'] ?? '') === 'rejected') echo 'text-red-600'; ?>
+                            <?php if (($req['status'] ?? '') === 'done') echo 'text-slate-500 line-through'; ?>
+                        "><?= statusLabel($req['status']) ?></td>
+                        <td class="px-4 py-3"><?= htmlspecialchars($req['admin_comment'] ?? 'Ожидает ответа') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    <?php endif; ?>
+
 </div>
 </body>
 </html>

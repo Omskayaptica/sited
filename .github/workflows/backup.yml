@@ -1,0 +1,23 @@
+name: Daily Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # каждый день в 2:00 UTC
+  workflow_dispatch:        # ручной запуск
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backup database via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd server-setup/website
+            bash scripts/backup.sh
+            echo "Backups available:"
+            ls -lh backups/

@@ -1,24 +1,70 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   php:
     build: .
     container_name: mysite_php
-    restart: always
+    restart: unless-stopped
     env_file: .env
+      environment:
+    - SMTP_HOST=${SMTP_HOST}
+    - SMTP_USER=${SMTP_USER}
+    - SMTP_PASS=${SMTP_PASS}
+    - MAIL_FROM_EMAIL=${MAIL_FROM_EMAIL}
+    - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    healthcheck:
+      test: ["CMD", "php-fpm-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
     volumes:
       - ./public:/var/www/mysite
       - ./vendor:/var/www/mysite/vendor:ro
       - ./private:/var/www/private:rw
+      - ./logs:/var/www/mysite/logs:rw
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     container_name: mysite_nginx
     restart: always
     ports:
       - "127.0.0.1:8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
     volumes:
-      - ./public:/var/www/mysite:ro  # только public!
+      - ./public:/var/www/mysite:ro
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
-      - php 
+      php:
+        condition: service_healthy
