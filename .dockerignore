@@ -24,7 +24,7 @@
 # ============ Зависимости (пересобираются в Dockerfile) ============
 vendor/
 node_modules/
-composer.lock
+# composer.lock  # НУЖЕН для точной установки зависимостей
 package-lock.json
 yarn.lock
 
