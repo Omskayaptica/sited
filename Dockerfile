@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     git \
     libfcgi-bin \
     curl \
+    procps \
+    netcat-openbsd \
     && docker-php-ext-install pdo pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
