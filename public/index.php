@@ -13,12 +13,21 @@ if (!isset($_SESSION['user_id'])) {
 
 $role = $_SESSION['role'];
 $userName = $_SESSION['full_name'];
+
+// Получаем все объявления (закреплённые сверху, потом новые)
+$stmt = $pdo->prepare("
+    SELECT * FROM announcements 
+    ORDER BY is_pinned DESC, created_at DESC
+");
+$stmt->execute();
+$announcements = $stmt->fetchAll();
 ?>
 
 <!doctype html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <title>Главная — ТСЖ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,6 +44,10 @@ $userName = $_SESSION['full_name'];
     <?php if ($role !== 'admin'): ?>
     <!-- Для жильца: Получить данные -->
     <?php
+    // Месяцы на русском
+    $monthsRu = ['январь', 'февраль', 'март', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    $currentMonth = $monthsRu[date('n') - 1];
+
     // Получить данные
     $submitted = $pdo->prepare(
         "SELECT COUNT(*) FROM meter_readings 
@@ -60,11 +73,11 @@ $userName = $_SESSION['full_name'];
 
     <!-- Блок статистики -->
     <div class="grid grid-cols-3 gap-4 mb-6">
-      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+      <div class="bg-slate-50 border bor$currentMonth-200 rounded-lg p-4 text-center">
         <div class="text-2xl"><?= $meterDone ? '✅' : '⚠️' ?></div>
         <div class="mt-1 text-sm font-semibold text-slate-700">Показания</div>
         <div class="text-xs text-slate-500">
-          <?= $meterDone ? 'Сданы за '.date('F') : 'Не сданы' ?>
+          <?= $meterDone ? 'Поданы за '.date('F') : 'Не поданы' ?>
         </div>
       </div>
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
@@ -125,6 +138,43 @@ $userName = $_SESSION['full_name'];
             </div>
         <?php endif; ?>
     </div>
+
+    <!-- ОБЪЯВЛЕНИЯ -->
+    <?php if (!empty($announcements)): ?>
+    <div class="mt-10 space-y-4">
+        <h2 class="text-2xl font-bold text-slate-900">📢 Объявления</h2>
+        
+        <?php foreach ($announcements as $ann): ?>
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm shadow-black/5 overflow-hidden
+                        <?php if ($ann['is_pinned']): ?>border-l-4 border-l-amber-500<?php endif; ?>">
+                
+                <!-- Шапка объявления -->
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-lg font-semibold text-slate-900">
+                                <?php if ($ann['is_pinned']): ?>
+                                    <span class="text-amber-600">📌</span>
+                                <?php endif; ?>
+                                <?= htmlspecialchars($ann['title']) ?>
+                            </h3>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">
+                            <?= date('d.m.Y в H:i', strtotime($ann['created_at'])) ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Содержимое объявления -->
+                <div class="px-6 py-5">
+                    <div class="text-slate-700 whitespace-pre-line text-sm">
+                        <?= htmlspecialchars($ann['body']) ?>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 </body>

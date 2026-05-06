@@ -97,6 +97,7 @@ $totalPages   = (int)ceil($totalHistory / $perPage);
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <title>Мои платежи — ТСЖ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>

@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         $error = "Неверный формат email";
     }
     
-    // Проверка Turnstile (если используется в продакшене)
     if (!$error && !empty(TURNSTILE_SITE_KEY)) {
         if (empty($_POST['cf-turnstile-response'])) {
             $error = "Пожалуйста, пройдите проверку безопасности.";
@@ -65,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     
     if (!$error) {
         try {
-            // Проверяем существование пользователя
             $stmt = $pdo->prepare("SELECT id, full_name, is_verified FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
@@ -74,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 if (empty($user['is_verified']) || $user['is_verified'] == 0) {
                     $error = "Сначала подтвердите ваш email адрес";
                 } else {
-                    // Проверяем количество запросов за последние 24 часа
                     $stmt = $pdo->prepare("
                         SELECT COUNT(*) as count 
                         FROM password_resets 
@@ -144,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Восстановление пароля</title>
     <script src="https://cdn.tailwindcss.com"></script>

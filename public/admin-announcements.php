@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_announcement']))
             // Редактирование
             $stmt = $pdo->prepare("
                 UPDATE announcements 
-                SET title = ?, body = ?, is_pinned = ?, updated_at = CURRENT_TIMESTAMP 
+                SET title = ?, body = ?, is_pinned = ?
                 WHERE id = ?
             ");
             $stmt->execute([$title, $body, $is_pinned, $announcement_id]);
@@ -90,6 +90,7 @@ $announcements = $stmt->fetchAll();
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление объявлениями — ТСЖ</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -230,9 +231,6 @@ $announcements = $stmt->fetchAll();
                                 </div>
                                 <p class="mt-1 text-xs text-slate-500">
                                     Создано: <?= date('d.m.Y в H:i', strtotime($ann['created_at'])) ?>
-                                    <?php if ($ann['updated_at'] !== $ann['created_at']): ?>
-                                        | Отредактировано: <?= date('d.m.Y в H:i', strtotime($ann['updated_at'])) ?>
-                                    <?php endif; ?>
                                 </p>
                             </div>
 

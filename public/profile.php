@@ -80,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль — ТСЖ «Наш Дом»</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -257,12 +258,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
         </div>
         <div class="px-6 py-5">
             <dl class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <dt class="text-slate-500">Роль</dt>
-                    <dd class="font-medium text-slate-900">
-                        <?= $user['role'] === 'admin' ? 'Администратор' : 'Житель' ?>
-                    </dd>
-                </div>
                 <div class="flex justify-between">
                     <dt class="text-slate-500">Статус почты</dt>
                     <dd>

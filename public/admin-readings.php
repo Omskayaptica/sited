@@ -44,7 +44,6 @@ $count_stmt->execute($params);
 $total = $count_stmt->fetch()['total'] ?? 0;
 $total_pages = ceil($total / $per_page);
 
-// 2. Основной запрос (SQLite LIMIT/OFFSET исправлен)
 $sql = "
     SELECT r.*, u.full_name, u.email, u.phone
     FROM meter_readings r 
@@ -57,7 +56,6 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params); 
 $readings = $stmt->fetchAll();
 
-// 3. Месяцы для фильтра (SQLite синтаксис)
 $months_stmt = $pdo->query("
     SELECT DISTINCT strftime('%Y-%m', month_year) as month 
     FROM meter_readings 
@@ -65,7 +63,6 @@ $months_stmt = $pdo->query("
 ");
 $available_months = $months_stmt->fetchAll();
 
-// 4. Список квартир
 $apartments_stmt = $pdo->query("SELECT DISTINCT apartment FROM meter_readings ORDER BY apartment");
 $available_apartments = $apartments_stmt->fetchAll();
 ?>
@@ -74,6 +71,7 @@ $available_apartments = $apartments_stmt->fetchAll();
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Журнал показаний</title>
     <script src="https://cdn.tailwindcss.com"></script>

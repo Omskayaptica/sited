@@ -117,15 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (empty($fullName)) {
             $error = "Пожалуйста, заполните ФИО.";
         } elseif (strlen($fullName) > 255) {
-            // [ИСПРАВЛЕНО] Ограничение длины ФИО
             $error = "ФИО слишком длинное (максимум 255 символов).";
         } elseif (empty($apartment)) {
             $error = "Пожалуйста, укажите номер квартиры.";
-        } elseif (!preg_match('/^\d{1,6}[а-яёА-ЯЁa-zA-Z]?$/', $apartment)) {
-            // [ИСПРАВЛЕНО] Номер квартиры: только цифры (1–6 знаков) с необязательной буквой
+        } elseif (!preg_match('/^\d{1,6}[а-яёА-ЯЁa-zA-Z-A-a-а-А-Б-б-В-в]?$/', $apartment)) {
             $error = "Некорректный номер квартиры (например: 42 или 12А).";
         } elseif (!empty($phone) && strlen($phone) > 20) {
-            // [ИСПРАВЛЕНО] Проверка длины телефона
             $error = "Некорректный номер телефона.";
         }
     }
@@ -144,8 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $codeHash = password_hash($code, PASSWORD_DEFAULT);
             $expires  = time() + 15 * 60; // 15 минут
 
-            // [ИСПРАВЛЕНО] beginTransaction() бросает исключение — убрана ложная проверка на false,
-            // всё обёрнуто в единый try/catch
+
             $pdo->beginTransaction();
 
             if ($exists) {
@@ -196,7 +192,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
         } catch (PDOException $e) {
-            // [ИСПРАВЛЕНО] Единая точка отката для любых PDO-исключений включая beginTransaction
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
@@ -210,14 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <?php render_head_content(); ?>
   <title>Регистрация в ТСЖ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!--
-    [ИСПРАВЛЕНО] Turnstile подключён через onload-callback вместо polling-интервала.
-    defer гарантирует, что скрипт выполнится после парсинга HTML,
-    а onload=onTurnstileLoad вызовет нашу функцию ровно один раз после загрузки API.
-  -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" defer></script>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
@@ -231,10 +222,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form method="POST" autocomplete="off" id="registration-form">
       <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'] ?? '') ?>">
-      <!--
-        [ИСПРАВЛЕНО] Скрытое поле токена вынесено в HTML сразу, чтобы JS только обновлял value,
-        а не создавал элемент динамически. Это исключает ситуацию, когда поле не создано до submit.
-      -->
       <input type="hidden" name="cf-turnstile-response" id="cf-turnstile-response" value="">
 
       <div class="mt-4">
@@ -249,10 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="mt-4">
         <label class="block text-sm font-semibold text-slate-700">
           <span>Пароль *</span>
-          <!--
-            [ИСПРАВЛЕНО] autocomplete="new-password" на поле пароля — правильный способ
-            запретить автозаполнение именно пароля, браузеры его уважают в отличие от autocomplete="off" на форме.
-          -->
           <input type="password" name="password" required minlength="8" autocomplete="new-password"
                  class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
         </label>
@@ -279,7 +262,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="mt-4">
         <label class="block text-sm font-semibold text-slate-700">
           <span>Номер квартиры *</span>
-          <!-- Валидация только на сервере, браузер не блокирует русские символы -->
           <input type="text" name="apartment" required maxlength="7"
                  placeholder="42 или 12А"
                  title="Введите номер квартиры: цифры и необязательная буква (например 42 или 12А)"
@@ -315,8 +297,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <script>
-  // [ИСПРАВЛЕНО] Turnstile инициализируется через onload-callback (задан в src URL выше).
-  // Это надёжнее polling-интервала: функция вызывается ровно один раз, сразу после загрузки API.
   function onTurnstileLoad() {
       const form        = document.getElementById('registration-form');
       const tokenInput  = document.getElementById('cf-turnstile-response');
@@ -331,20 +311,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           sitekey: '<?= htmlspecialchars(TURNSTILE_SITE_KEY) ?>',
 
           callback: function (token) {
-              // [ИСПРАВЛЕНО] Пишем токен напрямую в уже существующее скрытое поле
               tokenInput.value = token;
               console.log('Turnstile пройден');
           },
 
           'error-callback': function () {
-              // [ИСПРАВЛЕНО] Сбрасываем поле при ошибке
               tokenInput.value = '';
               console.warn('Ошибка Turnstile');
           },
 
           'expired-callback': function () {
-              // [ИСПРАВЛЕНО] Сбрасываем поле при истечении токена —
-              // раньше скрытое поле оставалось со старым значением
               tokenInput.value = '';
               console.warn('Токен Turnstile истёк');
           },
@@ -353,7 +329,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           size: 'normal'
       });
 
-      // Проверка при отправке формы
       form.addEventListener('submit', function (e) {
           if (!tokenInput.value) {
               e.preventDefault();

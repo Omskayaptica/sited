@@ -1,4 +1,11 @@
 <?php
+// Функция для вывода тегов в <head>
+function render_head_content(): void {
+    ?>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    <?php
+}
+
 function render_header(): void {
     $role = $_SESSION['role'] ?? 'guest';
     $name = $_SESSION['full_name'] ?? 'Гость';
@@ -16,8 +23,6 @@ function render_header(): void {
                 <?php if ($role !== 'guest'): ?>
                     <a href="index.php" class="rounded-md px-3 py-2 text-slate-600 font-medium transition hover:bg-slate-100 hover:text-blue-600">Главная</a>
                     
-                    <a href="announcements.php" class="rounded-md px-3 py-2 text-slate-600 font-medium transition hover:bg-slate-100 hover:text-blue-600">📢 Объявления</a>
-
                     <?php if ($role === 'admin'): ?>
                         <a href="admin-announcements.php" class="rounded-md px-3 py-2 text-amber-700 font-medium transition hover:bg-amber-50 hover:text-amber-800">📝 Управление объявлениями</a>
                         <a href="admin-readings.php" class="rounded-md px-3 py-2 text-amber-700 font-medium transition hover:bg-amber-50 hover:text-amber-800">📊 Все показания</a>

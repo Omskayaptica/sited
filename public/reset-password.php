@@ -1,19 +1,23 @@
 <?php
 // public/reset-password.php
 
-session_start();
-require_once '/var/www/mysite/inc/header.php';
+ob_start();
+
 require_once '/var/www/mysite/inc/init.php';
+require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
 
 $error = '';
 $success = '';
 $show_form = false;
 $token = $_GET['token'] ?? '';
-$email = $_SESSION['reset_email'] ?? ''; 
+// Email может быть как в сессии, так и в GET параметре
+$email = $_SESSION['reset_email'] ?? $_GET['email'] ?? '';
 
 
-if (!empty($token) && !empty($email)) {
+if (empty($email)) {
+    $error = "Email не указан. <a href='forgot-password.php'>Запросить сброс пароля</a>";
+} elseif (!empty($token)) {
     $stmt = $pdo->prepare("
         SELECT pr.*, u.id as user_id, u.email, u.full_name 
         FROM password_resets pr
@@ -77,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT id FROM password_resets 
                     WHERE id = ? AND used = 0 AND expires_at > datetime('now')
                 ");
-                $stmt->execute([$_SESSION['reset_id']]);
+                $stmt->execute([$_SESSION['reset_id'] ?? null]);
                 if (!$stmt->fetch()) {
                     throw new Exception("Токен больше не действителен.");
                 }
@@ -107,6 +111,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = "Пароль успешно изменен! Теперь вы можете войти.";
                 $show_form = false;
                 
+                // Редирект на логин
+                while (ob_get_level()) ob_end_clean();
+                header("Location: login.php?reset=success");
+                exit;
+                
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -122,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <title>Сброс пароля - ТСЖ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>

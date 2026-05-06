@@ -48,6 +48,7 @@ if (!$req) die("Заявка не найдена");
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <?php render_head_content(); ?>
     <title>Редактирование заявки №<?= $id ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,7 +60,7 @@ if (!$req) die("Заявка не найдена");
     <a class="mt-2 inline-block text-blue-600 hover:underline" href="index.php">← Вернуться назад</a>
 
     <div class="mt-6 max-w-2xl mx-auto rounded-lg border border-slate-200 bg-white p-6">
-        <!-- Информация о заявке (не редактируется) -->
+        <!-- Информация о заявке -->
         <div class="pb-4 mb-4 border-b border-slate-200 text-sm text-slate-700 space-y-1">
             <div><strong class="text-slate-900">Жилец:</strong> <?= htmlspecialchars($req['full_name']) ?> (Кв. <?= htmlspecialchars($req['apartment']) ?>)</div>
             <div><strong class="text-slate-900">Дата:</strong> <?= date('d.m.Y H:i', strtotime($req['created_at'])) ?></div>
