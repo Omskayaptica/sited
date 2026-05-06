@@ -177,6 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $sent = sendVerificationCode($email, $code);
 
                     if ($sent) {
+                        // Сохраняем email в сессию перед редиректом
+                        $_SESSION['verify_email'] = $email;
                         $pdo->commit();
                         // Очищаем буфер перед редиректом
                         while (ob_get_level()) {
@@ -277,10 +279,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="mt-4">
         <label class="block text-sm font-semibold text-slate-700">
           <span>Номер квартиры *</span>
-          <!-- [ИСПРАВЛЕНО] pattern соответствует серверной валидации: цифры + необязательная буква -->
+          <!-- Валидация только на сервере, браузер не блокирует русские символы -->
           <input type="text" name="apartment" required maxlength="7"
                  placeholder="42 или 12А"
-                 pattern="^\d{1,6}[а-яёА-ЯЁa-zA-Z]?$"
                  title="Введите номер квартиры: цифры и необязательная буква (например 42 или 12А)"
                  value="<?= htmlspecialchars($_POST['apartment'] ?? '') ?>"
                  class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">

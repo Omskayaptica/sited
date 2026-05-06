@@ -75,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // Проверяем пароль
+            $passwordValid = $user && password_verify($password, $user['password']);
 
             if ($user && $passwordValid) {
                 if ((int)$user['is_verified'] === 0) {
