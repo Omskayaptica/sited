@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "ФИО слишком длинное (максимум 255 символов).";
         } elseif (empty($apartment)) {
             $error = "Пожалуйста, укажите номер квартиры.";
-        } elseif (!preg_match('/^\d{1,6}[а-яёА-ЯЁa-zA-Z-A-a-а-А-Б-б-В-в]?$/', $apartment)) {
+        } elseif (!preg_match('/^\d{1,6}[а-яёА-ЯЁ]?$/', $apartment)) {
             $error = "Некорректный номер квартиры (например: 42 или 12А).";
         } elseif (!empty($phone) && strlen($phone) > 20) {
             $error = "Некорректный номер телефона.";
