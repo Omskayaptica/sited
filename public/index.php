@@ -137,9 +137,7 @@ $announcements = $stmt->fetchAll();
                 </a>
             </div>
         <?php endif; ?>
-    </div>
-
-    <!-- ОБЪЯВЛЕНИЯ -->
+            <!-- ОБЪЯВЛЕНИЯ -->
     <?php if (!empty($announcements)): ?>
     <div class="mt-10 space-y-4">
         <h2 class="text-2xl font-bold text-slate-900">📢 Объявления</h2>
@@ -175,6 +173,7 @@ $announcements = $stmt->fetchAll();
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    </div>
 </div>
 
 </body>

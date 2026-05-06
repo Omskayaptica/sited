@@ -110,11 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$alreadySubmitted && empty($error)
             }
 
             if (empty($error)) {
-                // Считаем расход. При первой подаче prev нет — расход 0,
-                // чтобы не выставлять счёт за всё накопленное
-                $diff_cold = $prev ? max(0.0, (float)$cold_water  - (float)$prev['cold_water'])  : 0.0;
-                $diff_hot  = $prev ? max(0.0, (float)$hot_water   - (float)$prev['hot_water'])   : 0.0;
-                $diff_elec = $prev ? max(0.0, (float)$electricity  - (float)$prev['electricity']) : 0.0;
+                // Считаем расход. При первой подаче используем сами показания (от базы 0)
+                $diff_cold = $prev ? max(0.0, (float)$cold_water  - (float)$prev['cold_water'])  : (float)$cold_water;
+                $diff_hot  = $prev ? max(0.0, (float)$hot_water   - (float)$prev['hot_water'])   : (float)$hot_water;
+                $diff_elec = $prev ? max(0.0, (float)$electricity  - (float)$prev['electricity']) : (float)$electricity;
 
                 $bill_amount = round(
                     ($diff_cold * TARIFF_COLD) +
