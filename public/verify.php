@@ -1,60 +1,82 @@
 <?php
 // public/verify.php
-
 ob_start();
-
-// Включаем отображение ошибок, чтобы не видеть белый экран или 500, если что-то пойдет не так
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 require_once '/var/www/mysite/inc/init.php';
 require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
 
-
 $error = '';
 $success = '';
+$show_form = true;
 
-// Получаем email из ссылки (GET) или из формы (POST)
-$email = $_GET['email'] ?? $_POST['email'] ?? '';
+// Email из сессии (более безопасно)
+$email = $_SESSION['verify_email'] ?? $_GET['email'] ?? '';
 
-// Обработка формы подтверждения
+if (empty($email)) {
+    die("Email не указан. <a href='register.php'>Вернуться на регистрацию</a>");
+}
+
+// Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $code = trim($_POST['code'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    // CSRF защита
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+        die("Ошибка безопасности (CSRF).");
+    }
 
-    if (empty($email) || empty($code)) {
-        $error = "Введите email и код подтверждения.";
+    $code = trim($_POST['code'] ?? '');
+
+    // Валидация
+    if (empty($code)) {
+        $error = "Введите код подтверждения.";
+    } elseif (!preg_match('/^\d{6}$/', $code)) {
+        $error = "Код должен быть ровно 6 цифр.";
     } else {
         try {
-            // Ищем пользователя
-            $stmt = $pdo->prepare("SELECT id, verify_code_hash, verify_expires, is_verified FROM users WHERE email = ?");
+            // Получаем пользователя
+            $stmt = $pdo->prepare("
+                SELECT id, verify_code_hash, verify_expires, is_verified, verify_attempts 
+                FROM users 
+                WHERE email = ?
+            ");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
             if (!$user) {
                 $error = "Пользователь с таким email не найден.";
             } elseif ($user['is_verified'] == 1) {
-                $success = "Аккаунт уже подтвержден. <a href='login.php'>Войти</a>";
+                $success = "Аккаунт уже подтвержден.";
+                $show_form = false;
+            } elseif ($user['verify_attempts'] >= 5) {
+                $error = "Слишком много неверных попыток. Попробуйте позже.";
+            } elseif (time() > $user['verify_expires']) {
+                $error = "Срок действия кода истек. Запросите новый при входе.";
+            } elseif (!password_verify($code, $user['verify_code_hash'])) {
+                // Увеличиваем счётчик попыток
+                $stmt = $pdo->prepare("UPDATE users SET verify_attempts = verify_attempts + 1 WHERE id = ?");
+                $stmt->execute([$user['id']]);
+                $error = "Неверный код подтверждения.";
             } else {
-                // Проверяем срок действия кода
-                if (time() > $user['verify_expires']) {
-                    $error = "Срок действия кода истек. Попробуйте запросить новый при входе.";
-                } 
-                // Проверяем сам код (он хранится как хеш)
-                elseif (!password_verify($code, $user['verify_code_hash'])) {
-                    $error = "Неверный код подтверждения.";
-                } 
-                else {
-                    // Всё ок — активируем аккаунт
-                    $updateStmt = $pdo->prepare("UPDATE users SET is_verified = 1, verify_code_hash = NULL, verify_expires = NULL WHERE id = ?");
-                    $updateStmt->execute([$user['id']]);
+                // ВСЁ ХОРОШО: активируем аккаунт
+                $pdo->beginTransaction();
+                try {
+                    $stmt = $pdo->prepare(
+                        "UPDATE users SET is_verified = 1, verify_code_hash = NULL, 
+                         verify_expires = NULL, verify_attempts = 0 WHERE id = ?"
+                    );
+                    $stmt->execute([$user['id']]);
+                    $pdo->commit();
                     
-                    // Перенаправляем на логин или показываем успех
+                    // Очищаем сессию
+                    unset($_SESSION['verify_email']);
+                    
+                    // Редирект
                     while (ob_get_level()) ob_end_clean();
                     header("Location: login.php?verified=1");
                     exit;
+                } catch (PDOException $e) {
+                    $pdo->rollBack();
+                    $error = "Ошибка при активации аккаунта.";
                 }
             }
         } catch (PDOException $e) {
@@ -79,22 +101,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p class="mt-2 text-slate-700">На почту <b><?= htmlspecialchars($email) ?></b> был отправлен код.</p>
 
     <?php if ($error): ?>
-        <div class="mt-4 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
+        <div class="mt-4 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+            <?= htmlspecialchars($error) ?>
+        </div>
     <?php endif; ?>
 
     <?php if ($success): ?>
-        <div class="mt-4 mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?= $success ?></div>
-    <?php else: ?>
+        <div class="mt-4 mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+            <?= htmlspecialchars($success) ?>
+            <a href="login.php" class="font-semibold underline">Перейти к входу</a>
+        </div>
+    <?php endif; ?>
 
-    <form method="POST" action="verify.php">
-      <input type="hidden" name="email" value="<?= htmlspecialchars($email) ?>">
-      
-      <div class="mt-4">
-        <label class="block text-sm font-semibold text-slate-700">Введите код из письма:</label>
-        <input type="text" name="code" required placeholder="123456" autocomplete="off" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-      </div>
+    <?php if ($show_form): ?>
+    <form method="POST" action="verify.php" class="mt-6 space-y-4">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
+        
+        <div>
+            <label class="block text-sm font-semibold text-slate-700">Код подтверждения:</label>
+            <input type="text" name="code" required placeholder="123456" autocomplete="off" 
+                   pattern="\d{6}" title="6 цифр" maxlength="6"
+                   class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+        </div>
 
-      <button type="submit" class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Подтвердить</button>
+        <button type="submit" class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Подтвердить</button>
     </form>
     <?php endif; ?>
   </div>

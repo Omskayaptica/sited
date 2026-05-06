@@ -46,10 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     }
     
     // Проверка Turnstile (если используется в продакшене)
-    if (!$error && isset($_POST['cf-turnstile-response'])) {
-        // Проверяем, определена ли функция и конфигурация доступна
-        if (!function_exists('verifyTurnstile') || !defined('TURNSTILE_SECRET_KEY')) {
-            // В продакшене это должно быть настроено правильно
+    if (!$error && !empty(TURNSTILE_SITE_KEY)) {
+        if (empty($_POST['cf-turnstile-response'])) {
+            $error = "Пожалуйста, пройдите проверку безопасности.";
+        } elseif (empty(TURNSTILE_SECRET_KEY)) {
+            $error = "Проверка безопасности временно недоступна. Пожалуйста, попробуйте позже.";
+        } elseif (!function_exists('verifyTurnstile')) {
             $error = "Проверка безопасности временно недоступна. Пожалуйста, попробуйте позже.";
         } else {
             $turnstile_response = $_POST['cf-turnstile-response'];
@@ -168,9 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         </div>
         
         <!-- Cloudflare Turnstile (если используется) -->
-        <?php if (defined('TURNSTILE_SITE_KEY')): ?>
+        <?php if (!empty(TURNSTILE_SITE_KEY)): ?>
         <div class="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4">
-            <div class="cf-turnstile" data-sitekey="<?php echo TURNSTILE_SITE_KEY; ?>"></div>
+            <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars(TURNSTILE_SITE_KEY); ?>"></div>
         </div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <?php endif; ?>

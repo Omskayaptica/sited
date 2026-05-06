@@ -5,6 +5,9 @@ require_once '/var/www/mysite/inc/init.php';
 require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
 
+$error = '';
+$success = false;
+
 // Проверка: вошел ли пользователь
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -35,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_request'])) {
         
         header("Location: my-requests.php?success=1");
         exit;
+    } else {
+        $error = "Тема и описание заявки должны быть не короче 6 символов.";
     }
 }
 
@@ -64,24 +69,31 @@ $requests = $stmt->fetchAll();
             <input type="hidden" name="csrf" value="<?= $_SESSION['csrf'] ?>">
             <input type="hidden" name="create_request" value="1">
             
+            <?php if ($error): ?>
+                <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+            <?php if (isset($_GET['success'])): ?>
+                <div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800">Заявка отправлена успешно.</div>
+            <?php endif; ?>
+            
             <div>
                 <label class="block text-sm font-semibold text-slate-700">Категория</label>
                 <select name="category" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                <option value="Сантехника">Сантехника</option>
-                <option value="Электрика">Электрика</option>
-                <option value="Уборка">Уборка</option>
-                <option value="Другое">Другое</option>
+                <option value="Сантехника" <?= (isset($_POST['category']) && $_POST['category'] === 'Сантехника') ? 'selected' : '' ?>>Сантехника</option>
+                <option value="Электрика" <?= (isset($_POST['category']) && $_POST['category'] === 'Электрика') ? 'selected' : '' ?>>Электрика</option>
+                <option value="Уборка" <?= (isset($_POST['category']) && $_POST['category'] === 'Уборка') ? 'selected' : '' ?>>Уборка</option>
+                <option value="Другое" <?= (isset($_POST['category']) && $_POST['category'] === 'Другое') ? 'selected' : '' ?>>Другое</option>
                 </select>
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-slate-700">Тема</label>
-                <input type="text" name="title" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                <input type="text" name="title" required value="<?= htmlspecialchars($_POST['title'] ?? '') ?>" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
             </div>
             
             <div>
                 <label class="block text-sm font-semibold text-slate-700">Описание</label>
-                <textarea name="description" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 h-24"></textarea>
+                <textarea name="description" required class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 h-24"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
             </div>
             
             <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">Отправить</button>

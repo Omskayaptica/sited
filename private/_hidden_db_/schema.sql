@@ -2,6 +2,17 @@ DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS requests;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS password_resets;
+DROP TABLE IF EXISTS announcements;
+DROP TABLE IF EXISTS meter_readings;
+DROP TABLE IF EXISTS bills;
+
+CREATE TABLE announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    is_pinned INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -11,12 +22,13 @@ CREATE TABLE users (
     apartment TEXT,
     phone TEXT,
     role TEXT DEFAULT 'resident',
+    
+    -- Верификация email:
     is_verified INTEGER DEFAULT 0,
     verify_code_hash TEXT,
     verify_expires INTEGER,
     verify_attempts INT DEFAULT 0,
-    last_password_reset DATETIME DEFAULT NULL,
-
+    
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,13 +81,31 @@ CREATE TABLE bills (
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
--- Создайте индекс для быстрого поиска
+
+
+
+
+
 CREATE INDEX idx_month_year ON meter_readings(month_year);
 CREATE INDEX idx_user_apartment ON meter_readings(user_id, apartment);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_verify_code ON users(verify_code_hash);
 
 CREATE INDEX idx_password_resets_token ON password_resets(token_hash);
 CREATE INDEX idx_password_resets_expires ON password_resets(expires_at);
 CREATE INDEX idx_password_resets_user ON password_resets(user_id);
+CREATE INDEX idx_announcements_pinned ON announcements(is_pinned DESC, created_at DESC);
+
 
 
 INSERT INTO users (email, password, full_name, apartment, role, is_verified) VALUES ('admin@yandex.ru', '$2y$10$lwaDmNh0AG3gy/m95vF/0OWeVkNr/kviOcBeXXYOQBV/KyxCZkEf6', 'Председатель ТСЖ', 'Офис', 'admin', 1);
+
+INSERT INTO announcements (title, body, is_pinned) VALUES
+INSERT INTO announcements (title, body, is_pinned) VALUES 
+('Добро пожаловать в портал ТСЖ!',
+ 'Уважаемые жильцы! Через этот портал вы можете:
+• Передавать показания счётчиков
+• Подавать заявки на ремонт
+• Просматривать историю платежей
+• Следить за объявлениями ТСЖ',
+ 1)

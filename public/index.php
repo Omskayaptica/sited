@@ -29,8 +29,57 @@ $userName = $_SESSION['full_name'];
 <div class="w-11/12 max-w-5xl mx-auto my-8 bg-white p-8 rounded-lg shadow shadow-black/5">
     <div class="bg-slate-100/70 border border-slate-200 p-6 rounded-lg mb-5">
         <h1 class="text-2xl font-bold text-slate-900">Добро пожаловать, <?= htmlspecialchars($userName) ?>!</h1>
-        <p class="mt-2 text-slate-700">Вы зашли в систему ТСЖ как <strong><?= ($role === 'admin') ? 'Администратор' : 'Жилец' ?></strong>.</p>
+        <p class="mt-2 text-slate-700">Вы зашли в систему ТСЖ. Показания принимаются ежемесячно до 25 числа.</p>
     </div>
+
+    <?php if ($role !== 'admin'): ?>
+    <!-- Для жильца: Получить данные -->
+    <?php
+    // Получить данные
+    $submitted = $pdo->prepare(
+        "SELECT COUNT(*) FROM meter_readings 
+         WHERE user_id=? AND month_year=?"
+    );
+    $submitted->execute([$_SESSION['user_id'], date('Y-m-01')]);
+    $meterDone = $submitted->fetchColumn() > 0;
+
+    $debt = $pdo->prepare(
+        "SELECT COALESCE(SUM(amount),0) FROM bills 
+         WHERE user_id=? AND status='unpaid'"
+    );
+    $debt->execute([$_SESSION['user_id']]);
+    $totalDebt = $debt->fetchColumn();
+
+    $openReqs = $pdo->prepare(
+        "SELECT COUNT(*) FROM requests 
+         WHERE user_id=? AND status NOT IN ('done','rejected')"
+    );
+    $openReqs->execute([$_SESSION['user_id']]);
+    $openCount = $openReqs->fetchColumn();
+    ?>
+
+    <!-- Блок статистики -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+        <div class="text-2xl"><?= $meterDone ? '✅' : '⚠️' ?></div>
+        <div class="mt-1 text-sm font-semibold text-slate-700">Показания</div>
+        <div class="text-xs text-slate-500">
+          <?= $meterDone ? 'Сданы за '.date('F') : 'Не сданы' ?>
+        </div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold 
+          <?= $totalDebt > 0 ? 'text-red-600' : 'text-green-600' ?>">
+          <?= number_format($totalDebt, 0, '.', ' ') ?> ₽
+        </div>
+        <div class="mt-1 text-sm font-semibold text-slate-700">Задолженность</div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-slate-700"><?= $openCount ?></div>
+        <div class="mt-1 text-sm font-semibold text-slate-700">Открытых заявок</div>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
         <?php if ($role === 'admin'): ?>
@@ -62,7 +111,7 @@ $userName = $_SESSION['full_name'];
             </div>
 
             <div class="bg-white p-5 border border-slate-200 rounded-xl text-center transition hover:shadow-lg hover:-translate-y-1">
-                <h3 class="text-lg font-semibold text-blue-600 mb-3">Сдать показания</h3>
+                <h3 class="text-lg font-semibold text-blue-600 mb-3">Передать показания</h3>
                 <p class="text-sm text-slate-600 mb-5">Передать данные по воде и электричеству за текущий месяц.</p>
                 <a href="meter-submit.php" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700">Сдать данные</a>
             </div>

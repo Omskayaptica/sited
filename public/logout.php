@@ -1,17 +1,29 @@
 <?php
-ob_start();
-session_set_cookie_params([
-    'lifetime' => 0,           // cookie живёт до закрытия браузера
-    'path' => '/',
-    'domain' => 'omkayaprica.shop', // замени на свой домен
-    'secure' => true,          // только по HTTPS
-    'httponly' => true,        // нельзя читать из JS
-    'samesite' => 'Strict'     // запрет кросс-сайтовых запросов
-]);
-session_start();
+require_once '/var/www/mysite/inc/init.php'; 
+
+
+if (
+    $_SERVER['REQUEST_METHOD'] !== 'POST' ||
+    !hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf_token'] ?? '')
+) {
+    header('Location: index.php');
+    exit;
+}
+
 $_SESSION = [];
-setcookie(session_name(), '', time()-3600, '/', '', true, true);
+
+$cookieParams = session_get_cookie_params();
+setcookie(
+    session_name(),
+    '',                          // пустое значение
+    time() - 3600,              
+    $cookieParams['path'],
+    $cookieParams['domain'],
+    $cookieParams['secure'],
+    $cookieParams['httponly']
+);
+
 session_destroy();
-while (ob_get_level()) ob_end_clean();
+
 header('Location: login.php');
 exit;

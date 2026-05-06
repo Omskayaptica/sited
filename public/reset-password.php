@@ -10,11 +10,10 @@ $error = '';
 $success = '';
 $show_form = false;
 $token = $_GET['token'] ?? '';
-$email = $_GET['email'] ?? '';
+$email = $_SESSION['reset_email'] ?? ''; 
 
-// Проверяем токен
+
 if (!empty($token) && !empty($email)) {
-    // Ищем токен в БД
     $stmt = $pdo->prepare("
         SELECT pr.*, u.id as user_id, u.email, u.full_name 
         FROM password_resets pr
@@ -48,9 +47,11 @@ if (!empty($token) && !empty($email)) {
     }
 }
 
-// Обработка сброса пароля
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Проверяем, что форма должна быть показана
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+        die("Ошибка безопасности (CSRF).");
+    }
+    
     if (!$show_form) {
         $error = "Недействительная сессия. Пожалуйста, начните процесс восстановления заново.";
     } else {
@@ -59,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $session_token = $_SESSION['reset_token'] ?? '';
         $session_email = $_SESSION['reset_email'] ?? '';
         
-        // Проверка введенных данных
+        // Валидация
         if (strlen($password) < 8) {
             $error = "Пароль должен быть не менее 8 символов.";
         } elseif ($password !== $password_confirm) {
@@ -72,23 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->beginTransaction();
                 
-                // Обновляем пароль
-                $hash = password_hash($password, PASSWORD_DEFAULT);
-                $current_time = date('Y-m-d H:i:s');
-                
-                // Запрос с проверкой существования колонки
                 $stmt = $pdo->prepare("
-                    UPDATE users 
-                    SET password = ?, last_password_reset = ? 
-                    WHERE id = ?
+                    SELECT id FROM password_resets 
+                    WHERE id = ? AND used = 0 AND expires_at > datetime('now')
                 ");
-                $stmt->execute([$hash, $current_time, $_SESSION['reset_user_id']]);
+                $stmt->execute([$_SESSION['reset_id']]);
+                if (!$stmt->fetch()) {
+                    throw new Exception("Токен больше не действителен.");
+                }
                 
-                // Помечаем токен как использованный
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $stmt->execute([$hash, $_SESSION['reset_user_id']]);
+                
                 $stmt = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = ?");
                 $stmt->execute([$_SESSION['reset_id']]);
                 
-                // Отправляем уведомление об изменении пароля
+                // Отправляем уведомление
                 require_once '/var/www/mysite/src/mail.php';
                 sendPasswordChangedNotification($email, $_SESSION['reset_full_name'] ?? 'Пользователь');
                 
@@ -110,45 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                $error = "Ошибка при смене пароля: " . $e->getMessage();
-                
-                // Если ошибка из-за отсутствия колонки, предлагаем альтернативный запрос
-                if (strpos($e->getMessage(), 'no such column: last_password_reset') !== false) {
-                    // Попробуем без колонки last_password_reset
-                    try {
-                        $pdo->beginTransaction();
-                        
-                        $hash = password_hash($password, PASSWORD_DEFAULT);
-                        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-                        $stmt->execute([$hash, $_SESSION['reset_user_id']]);
-                        
-                        $stmt = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = ?");
-                        $stmt->execute([$_SESSION['reset_id']]);
-                        
-                        require_once '/var/www/mysite/src/mail.php';
-                        sendPasswordChangedNotification($email, $_SESSION['reset_full_name'] ?? 'Пользователь');
-                        
-                        $pdo->commit();
-                        
-                        unset(
-                            $_SESSION['reset_token'], 
-                            $_SESSION['reset_email'], 
-                            $_SESSION['reset_id'],
-                            $_SESSION['reset_user_id'],
-                            $_SESSION['reset_full_name']
-                        );
-                        
-                        $success = "Пароль успешно изменен! Теперь вы можете войти.";
-                        $show_form = false;
-                        $error = ''; // Очищаем ошибку
-                        
-                    } catch (Exception $e2) {
-                        if ($pdo->inTransaction()) {
-                            $pdo->rollBack();
-                        }
-                        $error = "Ошибка при смене пароля: " . $e2->getMessage();
-                    }
-                }
+                error_log("Password reset error: " . $e->getMessage());
+                $error = "Произошла ошибка при смене пароля. Попробуйте позже.";
             }
         }
     }
@@ -158,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Сброс пароля - ТСЖ Омская причал</title>
+    <title>Сброс пароля - ТСЖ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -168,24 +132,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1 class="text-2xl font-bold text-slate-900">Сброс пароля</h1>
         
         <?php if ($error): ?>
-            <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800"><?= htmlspecialchars($error) ?></div>
+            <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+                <?= htmlspecialchars($error) ?>
+            </div>
         <?php endif; ?>
         
         <?php if ($success): ?>
-            <div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800"><?= htmlspecialchars($success) ?></div>
+            <div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+                <?= htmlspecialchars($success) ?>
+            </div>
             <p><a class="inline-block mt-4 text-blue-600 hover:underline" href="login.php">Перейти к входу</a></p>
         <?php endif; ?>
         
         <?php if ($show_form): ?>
             <form method="post" class="mt-6 space-y-4">
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
+                
                 <label class="block text-sm font-semibold text-slate-700">
                     Новый пароль (минимум 8 символов)
-                    <input type="password" name="password" required minlength="8" autocomplete="new-password" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    <input type="password" name="password" required minlength="8" 
+                           autocomplete="new-password" 
+                           class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </label>
                 
                 <label class="block text-sm font-semibold text-slate-700">
                     Подтвердите новый пароль
-                    <input type="password" name="password_confirm" required autocomplete="new-password" class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    <input type="password" name="password_confirm" required 
+                           autocomplete="new-password" 
+                           class="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                 </label>
                 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 font-semibold text-white hover:bg-emerald-700">Установить новый пароль</button>
@@ -198,7 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="mt-2"><a class="text-blue-600 hover:underline" href="forgot-password.php">Запросить новую ссылку</a></p>
             </div>
         <?php endif; ?>
-        
     </div>
 </body>
 </html>

@@ -7,8 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: 'default_value_if_not_set');
-define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY'));
+define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: null);
+define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY') ?: null);
 
 // CSRF token
 if (empty($_SESSION['csrf'])) {
@@ -34,6 +34,43 @@ function record_failed_attempt(): void {
 }
 function reset_attempts(): void {
     $_SESSION['failed_login'] = ['count' => 0, 'first_ts' => 0];
+}
+
+function verifyTurnstile(string $secretKey, string $responseToken): array {
+    $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+    $data = [
+        'secret' => $secretKey,
+        'response' => $responseToken,
+        'remoteip' => $_SERVER['REMOTE_ADDR'] ?? ''
+    ];
+
+    $options = [
+        'http' => [
+            'method' => 'POST',
+            'header' => 'Content-Type: application/x-www-form-urlencoded',
+            'content' => http_build_query($data),
+            'timeout' => 5
+        ]
+    ];
+
+    $context = stream_context_create($options);
+    set_error_handler(function() { return true; });
+    $result = file_get_contents($url, false, $context);
+    restore_error_handler();
+
+    if ($result === false) {
+        error_log("Turnstile API недоступна или произошла ошибка сети");
+        return ['success' => false, 'error' => 'network_error'];
+    }
+
+    $decoded = json_decode($result, true);
+    if ($decoded === null) {
+        error_log("Ошибка декодирования JSON от Turnstile: " . $result);
+        return ['success' => false, 'error' => 'json_decode_error'];
+    }
+
+    return $decoded;
 }
 
 function statusLabel(string $status): string {
