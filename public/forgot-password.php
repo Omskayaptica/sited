@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         $error = "Неверный формат email";
     }
     
-    if (!$error && !empty(TURNSTILE_SITE_KEY)) {
+    if (!$error && !empty(TURNSTILE_SITE_KEY) && !SKIP_TURNSTILE_CHECK) {
         if (empty($_POST['cf-turnstile-response'])) {
             $error = "Пожалуйста, пройдите проверку безопасности.";
         } elseif (empty(TURNSTILE_SECRET_KEY)) {
@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         </div>
         
         <!-- Cloudflare Turnstile (если используется) -->
-        <?php if (!empty(TURNSTILE_SITE_KEY)): ?>
+        <?php if (!empty(TURNSTILE_SITE_KEY) && !SKIP_TURNSTILE_CHECK): ?>
         <div class="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4">
             <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars(TURNSTILE_SITE_KEY); ?>"></div>
         </div>

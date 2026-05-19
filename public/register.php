@@ -88,17 +88,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 3. Валидация Turnstile
-    if (empty($cf_turnstile_response)) {
-        $error = "Пожалуйста, пройдите проверку безопасности.";
-    } else {
-        $turnstileResult = verifyTurnstile(TURNSTILE_SECRET_KEY, $cf_turnstile_response);
+    if (!SKIP_TURNSTILE_CHECK) {
+        if (empty($cf_turnstile_response)) {
+            $error = "Пожалуйста, пройдите проверку безопасности.";
+        } else {
+            $turnstileResult = verifyTurnstile(TURNSTILE_SECRET_KEY, $cf_turnstile_response);
 
-        if (!$turnstileResult['success']) {
-            // [ИСПРАВЛЕНО] Отдельное сообщение при сетевой ошибке Cloudflare
-            if (($turnstileResult['error'] ?? '') === 'network_error') {
-                $error = "Сервис проверки безопасности временно недоступен. Попробуйте позже.";
-            } else {
-                $error = "Проверка безопасности не пройдена. Пожалуйста, попробуйте снова.";
+            if (!$turnstileResult['success']) {
+                // [ИСПРАВЛЕНО] Отдельное сообщение при сетевой ошибке Cloudflare
+                if (($turnstileResult['error'] ?? '') === 'network_error') {
+                    $error = "Сервис проверки безопасности временно недоступен. Попробуйте позже.";
+                } else {
+                    $error = "Проверка безопасности не пройдена. Пожалуйста, попробуйте снова.";
+                }
             }
         }
     }
@@ -209,7 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Регистрация в ТСЖ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <?php if (!SKIP_TURNSTILE_CHECK): ?>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" defer></script>
+  <?php endif; ?>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans leading-relaxed">
   <?php render_header(); ?>
@@ -281,9 +285,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <!-- Cloudflare Turnstile Widget -->
+      <?php if (!SKIP_TURNSTILE_CHECK): ?>
       <div class="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4 min-h-[65px]">
         <div id="turnstile-widget"></div>
       </div>
+      <?php endif; ?>
 
       <button type="submit" id="submit-btn"
               class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700">
@@ -296,6 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
   </div>
 
+  <?php if (!SKIP_TURNSTILE_CHECK): ?>
   <script>
   function onTurnstileLoad() {
       const form        = document.getElementById('registration-form');
@@ -338,5 +345,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
   }
   </script>
+  <?php endif; ?>
 </body>
 </html>

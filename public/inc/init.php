@@ -9,6 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: null);
 define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY') ?: null);
+define('SKIP_TURNSTILE_CHECK', getenv('SKIP_TURNSTILE_CHECK') === 'true');
 
 // CSRF token
 if (empty($_SESSION['csrf'])) {
@@ -37,6 +38,11 @@ function reset_attempts(): void {
 }
 
 function verifyTurnstile(string $secretKey, string $responseToken): array {
+    // Проверка отключена для тестирования
+    if (SKIP_TURNSTILE_CHECK) {
+        return ['success' => true, 'error_codes' => []];
+    }
+    
     $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
     $data = [
