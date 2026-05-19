@@ -6,7 +6,7 @@ ob_start();
 require_once '/var/www/mysite/inc/init.php';
 require_once '/var/www/mysite/inc/header.php';
 require_once '/var/www/mysite/src/db.php';
-
+require_once '/var/www/mysite/src/mail.php';
 $error = '';
 $success = '';
 $show_form = false;

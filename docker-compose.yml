@@ -26,8 +26,8 @@ services:
           cpus: '0.5'
           memory: 128M
     volumes:
-      - ./public:/var/www/mysite
-      - ./vendor:/var/www/mysite/vendor:ro
+      - ./public:/var/www/mysite:ro
+      - vendor_volume:/var/www/mysite/vendor:ro
       - ./private:/var/www/private:rw
       - ./logs:/var/www/mysite/logs:rw
 
@@ -62,3 +62,6 @@ services:
     depends_on:
       php:
         condition: service_healthy
+
+volumes:
+  vendor_volume:

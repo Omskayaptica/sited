@@ -100,7 +100,6 @@ CREATE INDEX idx_announcements_pinned ON announcements(is_pinned DESC, created_a
 
 INSERT INTO users (email, password, full_name, apartment, role, is_verified) VALUES ('admin@yandex.ru', '$2y$10$lwaDmNh0AG3gy/m95vF/0OWeVkNr/kviOcBeXXYOQBV/KyxCZkEf6', 'Председатель ТСЖ', 'Офис', 'admin', 1);
 
-INSERT INTO announcements (title, body, is_pinned) VALUES
 INSERT INTO announcements (title, body, is_pinned) VALUES 
 ('Добро пожаловать в портал ТСЖ!',
  'Уважаемые жильцы! Через этот портал вы можете:

@@ -35,4 +35,4 @@ RUN chmod +x /usr/local/bin/php-fpm-healthcheck
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
