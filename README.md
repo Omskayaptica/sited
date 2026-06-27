@@ -1,445 +1,293 @@
-# ТСЖ «Наш Дом» — Система управления жилищно-коммунальным хозяйством
+# Веб-приложение для управления ТСЖ
 
-Веб-приложение для управления ТСЖ, облегчающее коммуникацию между жильцами и администрацией. Жильцы подают заявки на ремонт, передают показания счётчиков, а председатель ТСЖ управляет всем через панель администратора.
+Сервис для коммуникации между жильцами и председателем ТСЖ: жильцы подают заявки на ремонт, передают показания счётчиков и оплачивают начисления, а председатель управляет всем этим через панель администратора.
 
----
+🌐 **Живая версия:** https://omkayaprica.shop/login.php
 
-## 🔧 Технологии
-
-| Компонент | Технология |
-|-----------|-----------|
-| **Backend** | PHP 8.1 (нативный, без фреймворков) |
-| **БД** | SQLite 3 |
-| **Frontend** | HTML5, CSS3 (Tailwind), Vanilla JS |
-| **Безопасность** | Cloudflare Turnstile (защита от ботов), bcrypt пароли, CSRF токены |
-| **Инфраструктура** | Docker, Docker Compose, Nginx, PHP-FPM |
+> Демо развёрнуто на VPS под HTTPS (Let's Encrypt), за реверс-прокси, с автодеплоем из этого репозитория и внешним мониторингом.
 
 ---
 
-## ✨ Основные возможности
+## Содержание
 
-### Для жильцов 🏠
-- ✅ **Регистрация и верификация** — через Email с кодом подтверждения (6 цифр)
-- ✅ **Профиль** — просмотр и редактирование ФИО, телефона, изменение пароля
-- ✅ **Заявки на ремонт** — создание, просмотр статуса, история обращений
-- ✅ **Передача показаний** — ежемесячная передача показаний по счётчикам воды и электричества
-- ✅ **История платежей** — просмотр начислений и задолженности
-- ✅ **Статистика на главной** — показания за месяц, размер задолженности, кол-во открытых заявок
-- ✅ **Объявления** — важная информация от администрации на главной странице
-
-### Для администрации 👨‍💼
-- ✅ **Управление заявками** — просмотр, изменение статуса, добавление комментариев
-- ✅ **Журнал показаний** — сводная таблица по всем квартирам за месяц
-- ✅ **Управление объявлениями** — создание, редактирование, удаление, закрепление
-- ✅ **Панель администратора** — быстрый доступ ко всем функциям
-
-### Безопасность 🔒
-- ✅ **CSRF защита** — все POST запросы требуют валидный токен
-- ✅ **Cloudflare Turnstile** — защита от автоматических атак при регистрации и входе
-- ✅ **Хеширование паролей** — bcrypt алгоритм (PASSWORD_DEFAULT)
-- ✅ **SQL инъекции** — подготовленные запросы (prepared statements)
-- ✅ **XSS защита** — HTML экранирование (`htmlspecialchars`)
-- ✅ **Валидация на сервере** — email, пароли, номера квартир (поддержка русских букв)
-- ✅ **Безопасные cookies** — httponly, secure, samesite=Strict
-- ✅ **Безопасный выход** — POST запрос вместо GET
+- [Возможности](#возможности)
+- [Стек](#стек)
+- [Архитектура](#архитектура)
+- [Безопасность](#безопасность)
+- [CI/CD](#cicd)
+- [Мониторинг и алертинг](#мониторинг-и-алертинг)
+- [Резервное копирование](#резервное-копирование)
+- [SSL / HTTPS](#ssl--https)
+- [Ветка с PostgreSQL](#ветка-с-postgresql)
+- [Локальный запуск](#локальный-запуск)
+- [Конфигурация](#конфигурация-env)
+- [Структура проекта](#структура-проекта)
+- [Скриншоты](#скриншоты)
+- [Диагностика](#диагностика)
 
 ---
 
-## 📁 Структура проекта
+## Возможности
 
-```
-sited/
-├── public/                          # Веб-приложение
-│   ├── index.php                    # 🏠 Главная (статистика + объявления)
-│   ├── login.php                    # 🔐 Вход (с Turnstile)
-│   ├── register.php                 # ✍️ Регистрация (с Turnstile)
-│   ├── verify.php                   # ✉️ Подтверждение email (6 цифр)
-│   ├── logout.php                   # 🚪 Выход (POST + CSRF)
-│   ├── forgot-password.php          # 🔑 Восстановление пароля
-│   ├── reset-password.php           # 🔄 Сброс пароля (по ссылке)
-│   ├── profile.php                  # 👤 Профиль + смена пароля
-│   │
-│   ├── my-requests.php              # 📋 Мои заявки (жилец)
-│   ├── my-payments.php              # 💳 История платежей
-│   ├── meter-submit.php             # ⚡ Передача показаний
-│   │
-│   ├── admin-requests.php           # 📋 Все заявки (админ)
-│   ├── admin-readings.php           # 📊 Журнал показаний (админ)
-│   ├── admin-announcements.php      # 📢 Управление объявлениями (админ)
-│   ├── admin_edit.php               # ✏️ Редактор заявок (админ)
-│   │
-│   ├── inc/
-│   │   ├── init.php                 # Инициализация (сессии, CSRF, constants)
-│   │   └── header.php               # Шапка сайта (навигация, favicon)
-│   │
-│   └── src/
-│       ├── config.php               # Конфигурация (Turnstile, SMTP, пути)
-│       ├── db.php                   # Подключение к БД (PDO), verifyTurnstile()
-│       └── mail.php                 # Отправка писем (регистрация, восстановление)
-│
-├── private/
-│   └── _hidden_db_/
-│       └── schema.sql               # Схема БД SQLite
-│
-├── docker/
-│   ├── healthcheck.sh               # Проверка здоровья контейнера
-│   └── nginx/
-│       └── conf.d/
-│           └── default.conf         # Конфигурация Nginx
-│
-├── scripts/
-│   └── backup.sh                    # Скрипт резервной копии БД
-│
-├── docker-compose.yml               # Оркестрация контейнеров
-├── Dockerfile                       # Образ PHP приложения
-├── entrypoint.sh                    # Точка входа контейнера
-└── README.md                        # Этот файл
-```
+- Регистрация с верификацией email (код подтверждения с истечением срока)
+- Две роли: **Жилец** и **Председатель ТСЖ**
+- Заявки на ремонт со статусами: новая → в работе → выполнена / отклонена, с комментарием администратора
+- Передача показаний счётчиков жильцами
+- Просмотр показаний председателем и **экспорт в Excel**
+- Расчёт и оплата начислений (переход на СБП — заглушка)
+- Объявления от председателя (с закреплением)
+- Восстановление пароля по одноразовому токену
+- Защита форм через Cloudflare Turnstile
+- Защита от брутфорса логина (лимит попыток по сессии)
 
 ---
 
-## 🗄️ Структура базы данных
+## Стек
 
-### Таблица `users`
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    full_name TEXT NOT NULL,
-    apartment TEXT NOT NULL,
-    phone TEXT,
-    role TEXT DEFAULT 'resident' CHECK(role IN ('admin', 'resident')),
-    is_verified INTEGER DEFAULT 0,
-    verify_code_hash TEXT,
-    verify_expires INTEGER,
-    verify_attempts INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+| Слой | Технология |
+|------|-----------|
+| Backend | PHP 8.1 (нативный, без фреймворков) |
+| База данных | SQLite 3 (ветка `main`) / PostgreSQL (ветка `postgre`) |
+| Frontend | HTML5, CSS3, Vanilla JS |
+| Веб-сервер | Nginx 1.25 (alpine) + PHP-FPM |
+| Контейнеризация | Docker, Docker Compose |
+| Почта | PHPMailer (SMTP) |
+| Антибот | Cloudflare Turnstile |
+| CI/CD | GitHub Actions |
+| Мониторинг | Grafana Cloud + Grafana Alloy |
+
+---
+
+## Архитектура
+
+```
+                          Internet
+                             |
+                       HTTPS | :443
+                             v
+                  +--------------------+
+                  |  Nginx/Xray на     |   SSL (Let's Encrypt)
+                  |   хосте (VPS)      |   reverse proxy
+                  +---------+----------+
+                            | 127.0.0.1:8080
+        +-------------------+--------------------+
+        |             docker compose             |
+        |                                        |
+        |   +--------------+    +--------------+ |
+        |   | mysite_nginx |--->|  mysite_php  | |
+        |   |   :80 (ro)   |FCGI|   PHP-FPM    | |
+        |   +--------------+9000|    :9000     | |
+        |                       +------+-------+ |
+        |                              |         |
+        |                       +------v-------+ |
+        |                       |  SQLite DB   | |
+        |                       | (volume,     | |
+        |                       |  private/)   | |
+        |                       +--------------+ |
+        +----------------------------------------+
+                            |
+          +-----------------+------------------+
+          v                 v                  v
+   Grafana Alloy      GitHub Actions      PHPMailer
+   -> Grafana Cloud   (deploy + backup)   -> SMTP
+   -> алерты в TG
 ```
 
-### Таблица `requests`
-```sql
-CREATE TABLE requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    category TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'in_progress', 'done', 'rejected')),
-    admin_response TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-);
-```
+Контейнер `nginx` монтирует код только на чтение (`:ro`) и принимает соединения от хостового реверс-прокси на `127.0.0.1:8080` — наружу контейнеры напрямую не торчат. Для PHP и Nginx заданы health-проверки и лимиты CPU/RAM (сервер слабый, ресурсы ограничены сознательно).
 
-### Таблица `meter_readings`
-```sql
-CREATE TABLE meter_readings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    month_year TEXT NOT NULL,
-    water_cold REAL,
-    water_hot REAL,
-    electricity REAL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    UNIQUE(user_id, month_year)
-);
-```
+---
 
-### Таблица `bills`
-```sql
-CREATE TABLE bills (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    month_year TEXT NOT NULL,
-    amount REAL NOT NULL,
-    status TEXT DEFAULT 'unpaid' CHECK(status IN ('paid', 'unpaid')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-);
-```
+## Безопасность
 
-### Таблица `announcements`
-```sql
-CREATE TABLE announcements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    body TEXT NOT NULL,
-    is_pinned INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+- **CSRF** — токен в сессии, проверяется на всех POST-формах
+- **Пароли** — хеширование через bcrypt (`password_hash`)
+- **Брутфорс** — не более 5 попыток входа за 5 минут на сессию
+- **Антибот** — Cloudflare Turnstile на регистрации, входе и восстановлении пароля
+- **Изоляция данных** — Nginx отдаёт `403/404` на пути к БД, `.env`, `.git` и приватным папкам; SQLite-файл лежит вне `public/`
+- **Заголовки** — `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`
+- **Секреты** — только через `.env` (в репозитории лежит `.env.example`), в коде нет хардкода
 
-### Таблица `password_resets`
-```sql
-CREATE TABLE password_resets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token_hash TEXT NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used INTEGER DEFAULT 0,
-    ip_address TEXT,
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-);
+---
+
+## CI/CD
+
+Два пайплайна GitHub Actions:
+
+**`docker-build.yml`** — при пуше в `main`:
+1. Собирает Docker-образ
+2. Прогоняет `php -l` (синтаксис-чек) по всем `.php`
+3. При успехе деплоит на VPS по SSH: `git reset --hard`, пересборка и `docker compose up -d`
+4. Ждёт статус `healthy` обоих контейнеров (до 30 попыток), иначе падает с выводом логов
+5. Чистит висячие образы (`docker image prune`)
+
+**`backup.yml`** — по расписанию (ежедневно в 02:00 UTC) и вручную: заходит на VPS по SSH и снимает резервную копию БД.
+
+Доступы (`SSH_HOST`, `SSH_USER`, `SSH_KEY`, `SSH_PORT`) хранятся в GitHub Secrets.
+
+---
+
+## Мониторинг и алертинг
+
+На VPS установлен **Grafana Alloy** — лёгкий агент (выбран из-за слабого сервера), который шлёт метрики в **Grafana Cloud**. Настроены алерты, например на нехватку места на диске; уведомления приходят в **Telegram**.
+
+Пример уведомления:
+
+```
+[Resolved] Disk space — critical
+summary: Disk is low
+folder: test
+datasource: grafanacloud-prom
 ```
 
 ---
 
-## 🚀 Быстрый старт
+## Резервное копирование
+
+`scripts/backup.sh` копирует файл БД в `./backups/` с меткой времени и удаляет копии старше 7 дней (ротация). Скрипт вызывается с VPS по расписанию через workflow `backup.yml`.
+
+```bash
+bash scripts/backup.sh
+# Backup: ./backups/database_20260623_020000.db
+```
+
+---
+
+## SSL / HTTPS
+
+HTTPS обеспечивается на хосте сертификатом **Let's Encrypt** с автообновлением. Терминация TLS и проксирование на контейнер настраиваются через отдельный установщик сервера — [Omskayaptica/solid-meme](https://github.com/Omskayaptica/solid-meme), который поднимает Nginx, выпускает сертификат и проксирует трафик на приложение.
+
+---
+
+## Ветка с PostgreSQL
+
+Версия на **PostgreSQL** вынесена в отдельную ветку:
+[`postgre`](https://github.com/Omskayaptica/sited/tree/postgre)
+
+`main` использует SQLite (просто, без внешних зависимостей, удобно для демо). Ветка `postgre` переводит хранилище на PostgreSQL в отдельном контейнере — ближе к продакшен-сценарию с отдельным сервером БД.
+
+---
+
+## Локальный запуск
 
 ### Требования
-- Docker & Docker Compose
+- Docker и Docker Compose
 - Git
-- Современный браузер
 
 ### Установка
 
 ```bash
-# Клонировать репозиторий
-git clone https://github.com/Omichpolyebok/sited.git
+git clone https://github.com/Omskayaptica/sited.git
 cd sited
 
-# Запустить контейнеры
-docker compose up -d --build
+# Создать .env из примера и заполнить значения
+cp .env.example .env
 
-# Получить IP адрес (для WSL2)
-wsl hostname -I
+# Поднять контейнеры
+docker compose up -d --build
 ```
 
-### Доступ к приложению
+База данных создаётся автоматически при первом старте (`entrypoint.sh` -> `init_db.php`), включая дефолтного администратора.
 
-- **URL:** `http://<ваш-ip>:8080` или `http://localhost:8080`
-- **Админ по умолчанию:**
-  - Email: `admin@yandex.ru`
-  - Пароль: `password123`
+### Доступ
 
----
+- **URL:** http://127.0.0.1:8080
+- **Админ по умолчанию:** `admin@yandex.ru` / `admin`
 
-## 📝 Описание ключевых файлов
-
-### `public/index.php` — Главная страница
-- Статистика для жилца: ✅ показания, 💰 задолженность, 📋 открытые заявки
-- Все объявления (закреплённые сверху)
-- Карточки быстрого доступа к функциям
-- Только для авторизованных пользователей
-
-### `public/register.php` — Регистрация
-- ✅ Email валидация (макс 255 символов)
-- ✅ Пароль валидация (мин 8 символов)
-- ✅ Cloudflare Turnstile для защиты от ботов
-- ✅ Санитизация номера квартиры: цифры + русские/английские буквы (1-6 цифр)
-- ✅ Отправка кода подтверждения по email
-- ✅ CSRF защита
-
-### `public/verify.php` — Подтверждение email
-- Проверка кода подтверждения (6 цифр)
-- Ограничение попыток (max 5 попыток)
-- Срок действия кода (15 минут)
-- Редирект на вход после подтверждения
-
-### `public/login.php` — Вход
-- ✅ Email/пароль валидация
-- ✅ Cloudflare Turnstile
-- ✅ Проверка подтверждения email
-- ✅ Безопасные сессии с httponly cookies
-- ✅ CSRF защита
-
-### `public/logout.php` — Выход
-- POST запрос (безопаснее, чем GET)
-- CSRF токен обязателен
-- Полная очистка сессии и cookies
-
-### `public/profile.php` — Профиль
-- Редактирование ФИО и телефона (макс 255 символов)
-- Смена пароля (требуется текущий пароль, новый мин 8 символов)
-- CSRF защита на всех формах
-
-### `public/meter-submit.php` — Передача показаний
-- Ежемесячная передача показаний счётчиков
-- Валидация числовых значений
-- Проверка дублей (одна запись в месяц)
-- История предыдущих показаний
-
-### `public/admin-announcements.php` — Управление объявлениями
-- Создание новых объявлений
-- Редактирование (без поля updated_at)
-- Удаление объявлений
-- Закрепление объявления (📌 сверху на главной)
-
-### `inc/init.php` — Инициализация
-- Подключение сессии с безопасными параметрами
-- Генерация CSRF токена
-- Загрузка конфигурации (constants)
-- Проверка требуемых переменных окружения
-
-### `inc/header.php` — Навигация
-- Функция `render_head_content()` — favicon и meta теги
-- Функция `render_header()` — навигация с меню
-- Адаптивная (мобильная + десктоп)
-- Меню зависит от роли (админ/жилец)
-
-### `src/db.php` — База данных
-- Подключение к SQLite через PDO
-- Функция `verifyTurnstile()` для проверки токенов Cloudflare
-- Обработка ошибок соединения
-
-### `src/mail.php` — Отправка писем
-- `sendVerificationCode()` — код подтверждения регистрации
-- `sendPasswordResetEmail()` — ссылка восстановления пароля
-- `sendPasswordChangedNotification()` — уведомление о смене пароля
-
-### `src/config.php` — Конфигурация
-- `TURNSTILE_SITE_KEY` — публичный ключ Cloudflare
-- `TURNSTILE_SECRET_KEY` — секретный ключ
-- `MAIL_HOST`, `MAIL_USER`, `MAIL_PASS` — параметры почты (SMTP)
-- `BASE_PATH` — абсолютный путь к приложению
+> Смените пароль администратора перед использованием в production.
 
 ---
 
-## 🔐 Безопасность
+## Конфигурация (`.env`)
 
-### Защита от CSRF
-- Каждая форма содержит CSRF токен
-- Проверка через `hash_equals()` (устойчива к timing attacks)
-- Всё POST запросы требуют валидный токен
+Скопируйте `.env.example` в `.env` и заполните:
 
-### Защита от SQL инъекций
-- Все запросы используют подготовленные statements (prepared statements)
-- Параметры передаются отдельно от SQL кода
+```env
+# SMTP
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=465
+SMTP_USER=your@email.ru
+SMTP_PASS=your-app-password
 
-### Защита от XSS
-- Весь вывод в HTML экранируется через `htmlspecialchars()`
-- Использование Tailwind CSS вместо inline styles
+# Cloudflare Turnstile
+TURNSTILE_SITE_KEY=your-site-key
+TURNSTILE_SECRET_KEY=your-secret-key
 
-### Защита от ботов
-- Cloudflare Turnstile на регистрации и входе
-- JavaScript валидация на клиенте
-- Проверка токенов на сервере
+# App
+APP_ENV=production
+```
 
-### Безопасные куки
-- `httponly` — недоступны JavaScript
-- `secure` — передаются только по HTTPS
-- `samesite=Strict` — защита от CSRF
-
-### Хеширование паролей
-- Использование `password_hash()` с bcrypt
-- Проверка через `password_verify()`
+Для Yandex используйте **пароль приложения**, а не основной пароль почты. Порт 465 — SSL, 587 — TLS.
 
 ---
 
-## 🐳 Docker команды
+## Структура проекта
+
+```
+sited/
+├── .docker/
+│   └── init_db.php              # Инициализация БД при первом старте
+├── .github/workflows/
+│   ├── docker-build.yml         # CI: сборка, php -l, деплой по SSH
+│   └── backup.yml               # Бэкап БД по расписанию
+├── docker/
+│   ├── nginx/conf.d/default.conf# Конфиг Nginx (security, FCGI, блокировки)
+│   └── healthcheck.sh           # Health-проверка PHP-FPM
+├── public/                      # Корень сайта (отдаётся Nginx)
+│   ├── inc/                     # init.php (CSRF, Turnstile, антибрут), header
+│   ├── src/                     # config.php, db.php, mail.php
+│   └── *.php                    # Страницы (login, register, dashboard, ...)
+├── private/_hidden_db_/
+│   └── schema.sql               # Схема БД + дефолтный админ
+├── scripts/
+│   └── backup.sh                # Бэкап БД с ротацией 7 дней
+├── docker-compose.yml
+├── Dockerfile                   # php:8.1-fpm + pdo_sqlite + composer
+├── entrypoint.sh
+└── .env.example
+```
+
+---
+
+## Скриншоты
+
+[Вход](docs/screenshots/login.png)
+[Панель председателя](docs/screenshots/admin.png)
+[Кабинет](docs/screenshots/dashboard.png)
+[Показания](docs/screenshots/readings.png)
+[Grafana](docs/screenshots/grafana.png)
+[Алерт](docs/screenshots/tg-alert.png)
+
+---
+
+## Диагностика
 
 ```bash
-# Запустить контейнеры
-docker compose up -d
+# Статус и health контейнеров
+docker compose ps
 
-# Остановить контейнеры
-docker compose down
+# Логи
+docker logs mysite_php
+docker logs mysite_nginx
 
-# Просмотр логов
-docker compose logs -f
+# Health PHP-FPM вручную
+docker exec mysite_php /usr/local/bin/php-fpm-healthcheck
 
-# Перестроить образы
-docker compose up -d --build
+# Письма не уходят — проверить SMTP в логах
+docker logs mysite_php | grep -i mail
 
-# Удалить всё (том, сеть, образы)
-docker compose down -v --rmi all
-
-# Зайти в контейнер PHP
-docker compose exec php sh
-
-# Зайти в контейнер Nginx
-docker compose exec nginx sh
+# Перезагрузить PHP без пересборки
+docker exec mysite_php kill -USR2 1
 ```
 
----
-
-## 🐛 Решённые проблемы в v2.0
-
-✅ Ошибка с undefined переменной `$passwordValid` при входе  
-✅ Email не передавался на страницу `verify.php`  
-✅ Русские буквы в номере квартиры блокировались браузером  
-✅ Месяц на главной выводился на английском (May → мая)  
-✅ Ошибки с несуществующим полем `updated_at` в объявлениях  
-✅ Отсутствовал favicon на всех страницах (добавлена emoji 🏠)  
-✅ Выход требовал GET запрос (небезопасно) → переделано на POST с CSRF  
-✅ Объявления были на отдельной странице → перенесены на `index.php`  
+| Проблема | Причина | Решение |
+|----------|---------|---------|
+| БД в режиме readonly | Права на файл/папку | `entrypoint.sh` чинит права при старте; перезапустите контейнер |
+| Письма не отправляются | Неверный SMTP / не пароль приложения | Проверьте `.env`, см. логи `mail` |
+| Turnstile не проходит | Неверные ключи или не передан реальный IP | Сверьте ключи в `.env`, проверьте `set_real_ip_from` в Nginx |
 
 ---
 
-## 📊 Примеры использования
+## Лицензия
 
-### Регистрация жилца
-1. Нажать "Регистрация"
-2. Заполнить форму (email, пароль, ФИО, квартира)
-3. Пройти проверку Turnstile
-4. Получить 6-значный код на email
-5. Ввести код в форме подтверждения
-6. Войти в систему
-
-### Передача показаний (жилец)
-1. На главной нажать "⚡ Сдать показания"
-2. Ввести показания счётчиков
-3. Нажать "Отправить"
-4. Статистика на главной обновится
-
-### Управление заявками (админ)
-1. На главной нажать "Заявки жильцов"
-2. Выбрать заявку
-3. Изменить статус (в работе, выполнена, отклонена)
-4. Добавить комментарий (опционально)
-5. Сохранить
-
-### Создание объявления (админ)
-1. На главной нажать "Управление объявлениями"
-2. Нажать "Создать объявление"
-3. Ввести заголовок и текст
-4. Опционально закрепить (📌) сверху
-5. Сохранить — объявление появится на главной для всех
-
----
-
-## 📝 TODO (В разработке)
-
-- [ ] Интеграция реальной платежной системы (СБП)
-- [ ] Email уведомления жильцам о статусе заявок
-- [ ] Экспорт показаний в Excel
-- [ ] Двухфакторная аутентификация (2FA)
-- [ ] Система рейтинга и отзывов
-- [ ] Календарь событий (отключения воды, электричества)
-- [ ] Чат поддержки между жильцом и админом
-- [ ] Мобильное приложение (Flutter/React Native)
-- [ ] API для интеграции с внешними системами
-
----
-
-## 🤝 Внесение изменений
-
-Если вы хотите доработать приложение:
-
-1. Создайте свою ветку: `git checkout -b feature/your-feature`
-2. Внесите изменения
-3. Протестируйте: `docker compose up`
-4. Коммитьте: `git commit -m "Описание"`
-5. Пушьте: `git push origin feature/your-feature`
-
----
-
-## 👨‍💻 Разработка
-
-**Язык:** PHP 8.1 (нативный)  
-**БД:** SQLite 3  
-**Frontend:** Tailwind CSS + Vanilla JS  
-**Версия:** 2.0  
-**Дата обновления:** май 2026  
-
----
-
-## 📄 Лицензия
-
-Этот проект распространяется свободно. Используйте как угодно!
+MIT
 
