@@ -247,18 +247,30 @@ sited/
 ```
 
 ---
-
 ## Скриншоты
 
-[Вход](docs/screenshots/login.png)
-[Панель председателя](docs/screenshots/admin.png)
-[Кабинет](docs/screenshots/dashboard.png)
-[Показания](docs/screenshots/readings.png)
-[Grafana](docs/screenshots/grafana.png)
-[Алерт](docs/screenshots/tg-alert.png)
-
----
-
+<table>
+  <tr>
+    <td align="center"><b>Вход</b></td>
+    <td align="center"><b>Панель председателя</b></td>
+    <td align="center"><b>Кабинет</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/login.png" width="100%"/></td>
+    <td><img src="docs/screenshots/admin.png" width="100%"/></td>
+    <td><img src="docs/screenshots/dashboard.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Показания</b></td>
+    <td align="center"><b>Grafana</b></td>
+    <td align="center"><b>Алерт</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/readings.png" width="100%"/></td>
+    <td><img src="docs/screenshots/grafana.png" width="100%"/></td>
+    <td><img src="docs/screenshots/tg-alert.png" width="100%"/></td>
+  </tr>
+</table>
 ## Диагностика
 
 ```bash
